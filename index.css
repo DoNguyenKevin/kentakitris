@@ -1,0 +1,112 @@
+/* Retro Pixel Font (using monospace as a fallback) */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+body {
+    font-family: 'Press Start 2P', monospace;
+    background-color: #1a1a2e; /* Deep purple background */
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+    overflow-x: hidden;
+}
+
+/* Custom Pixel Look for Game Elements */
+.pixel-border {
+    border: 4px solid #f9f9f9;
+    box-shadow: 
+        -4px -4px 0px 0px #4a4e69, /* Darker inset effect */
+        4px 4px 0px 0px #bbd0ff,   /* Lighter outset effect */
+        -8px -8px 0px 0px #2c314c inset, 
+        8px 8px 0px 0px #3f425b inset;
+    background-color: #2c314c;
+}
+
+.board-container {
+    width: 320px; /* 10 blocks * 32px/block */
+    height: 640px; /* 20 blocks * 32px/block */
+    max-width: 90vw;
+    max-height: 90vh;
+    margin-right: 24px;
+}
+
+#game-board {
+    display: grid;
+    grid-template-rows: repeat(20, 1fr);
+    grid-template-columns: repeat(10, 1fr);
+    background-color: #0d0d1a; /* Very dark background for the board */
+    width: 100%;
+    height: 100%;
+    border: none;
+    box-shadow: none; /* Remove pixel-border shadow from the direct board container */
+}
+
+.block {
+    aspect-ratio: 1 / 1; /* Keep blocks square */
+    background-color: #333;
+    border: 1px solid #1a1a2e; /* Separation line */
+    box-sizing: border-box;
+    /* Simple pixel-style shadow for blocks */
+    box-shadow: 1px 1px 0px 0px rgba(0,0,0,0.5) inset, -1px -1px 0px 0px rgba(255,255,255,0.3) inset;
+}
+
+/* Color definitions for Tetrominos */
+.color-1 { background-color: #ff0d72; } /* T - Bright Pink */
+.color-2 { background-color: #0dc2ff; } /* I - Cyan */
+.color-3 { background-color: #0dff72; } /* J - Lime Green */
+.color-4 { background-color: #ff8e0d; } /* L - Orange */
+.color-5 { background-color: #ffe100; } /* O - Yellow */
+.color-6 { background-color: #ff1a0d; } /* S - Red */
+.color-7 { background-color: #5833ff; } /* Z - Blue Violet */
+
+/* Utility styles for mobile touch controls */
+.touch-button {
+    background-color: #4a4e69;
+    color: white;
+    padding: 1rem;
+    border: 3px solid #f9f9f9;
+    box-shadow: 
+        -3px -3px 0px 0px #1a1a2e, 
+        3px 3px 0px 0px #bbd0ff;
+    transition: all 0.05s ease;
+}
+
+.touch-button:active {
+    box-shadow: 
+        0 0 0px 0px #1a1a2e, 
+        0 0 0px 0px #bbd0ff;
+    transform: translate(3px, 3px);
+}
+
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+    }
+    .board-container {
+        margin-right: 0;
+        margin-bottom: 20px;
+        width: 100%;
+        max-width: 300px; /* Limit board size on small screens */
+    }
+    .info-panel {
+        width: 100%;
+        max-width: 300px;
+    }
+    #touch-controls {
+        margin-top: 20px;
+    }
+}
+
+/* Hide the top two 'ghost' rows for the board */
+#game-board > .block:nth-child(-n + 20) {
+    visibility: hidden;
+}
+
+/* Keep visibility for current piece in the ghost rows */
+.current-piece-cell {
+    visibility: visible !important;
+}
