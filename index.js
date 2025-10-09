@@ -1,0 +1,782 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot, collection, query, limit, orderBy, getDocs, updateDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Set Firebase log level to debug for development purposes (can be removed later)
+setLogLevel('Debug');
+
+// Global variables provided by the environment
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+let app, db, auth, userId = null;
+
+if (Object.keys(firebaseConfig).length > 0) {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+    window.db = db; // Attach to window for game logic access
+    window.auth = auth; // Attach to window for game logic access
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            userId = user.uid;
+        } else {
+            // Sign in anonymously if no custom token is provided or if sign-in failed
+            try {
+                await signInAnonymously(auth);
+                userId = auth.currentUser.uid;
+            } catch (error) {
+                console.error("Anonymous sign-in failed:", error);
+            }
+        }
+        window.userId = userId; // Attach to window for game logic access
+        document.getElementById('user-id-display').textContent = userId ? `Player ID: ${userId}` : 'Authenticating...';
+        
+        // Once authenticated, start listening to the leaderboard
+        if (userId && window.loadLeaderboard) {
+            window.loadLeaderboard();
+        }
+    });
+
+    // Try to sign in with custom token if available
+    if (initialAuthToken) {
+        signInWithCustomToken(auth, initialAuthToken).catch(error => {
+            console.error("Custom sign-in failed, proceeding with anonymous sign-in.", error);
+            signInAnonymously(auth);
+        });
+    } else {
+        signInAnonymously(auth);
+    }
+} else {
+     // Fallback if Firebase config is missing
+     console.warn("Firebase configuration is missing. Leaderboard functionality is disabled.");
+     document.getElementById('leaderboard-container').innerHTML = '<p class="text-red-400 text-sm">Leaderboard disabled (Missing Firebase config).</p>';
+     window.db = null;
+     window.auth = null;
+     window.userId = crypto.randomUUID(); // Mock user ID for local use
+     document.getElementById('user-id-display').textContent = `Mock ID: ${window.userId}`;
+}
+
+// --- GAME CONSTANTS ---
+const BOARD_WIDTH = 10;
+const BOARD_HEIGHT = 20;
+const NEXT_GRID_SIZE = 4;
+const SCORE_PER_LINE = 10;
+const LINES_PER_LEVEL = 10;
+const INITIAL_DROP_DELAY = 1000; // ms
+
+// Tetromino shapes and their colors (color index 1-7)
+const SHAPES = [
+    // 0: T-shape
+    [[0, 1, 0], [1, 1, 1], [0, 0, 0],], 
+    // 1: I-shape
+    [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0],], 
+    // 2: J-shape
+    [[1, 0, 0], [1, 1, 1], [0, 0, 0],], 
+    // 3: L-shape
+    [[0, 0, 1], [1, 1, 1], [0, 0, 0],], 
+    // 4: O-shape
+    [[1, 1], [1, 1],], 
+    // 5: S-shape
+    [[0, 1, 1], [1, 1, 0], [0, 0, 0],], 
+    // 6: Z-shape
+    [[1, 1, 0], [0, 1, 1], [0, 0, 0],], 
+];
+
+// The index in COLORS corresponds to the color-N class in CSS
+const COLORS = [
+    null, // Index 0 is reserved for empty space
+    'color-1', // T: Pink
+    'color-2', // I: Cyan
+    'color-3', // J: Lime Green
+    'color-4', // L: Orange
+    'color-5', // O: Yellow
+    'color-6', // S: Red
+    'color-7', // Z: Blue Violet
+];
+
+// --- GAME STATE ---
+let board = [];
+let currentPiece = null;
+let nextPiece = null;
+let score = 0;
+let lines = 0;
+let level = 1;
+let isPlaying = false;
+let isPaused = false;
+let dropIntervalId = null;
+
+// --- DOM ELEMENTS ---
+const boardEl = document.getElementById('game-board');
+const scoreEl = document.getElementById('score-display');
+const levelEl = document.getElementById('level-display');
+const nextPieceEl = document.getElementById('next-piece-display');
+const statusEl = document.getElementById('status-message');
+const startButton = document.getElementById('start-button');
+const pauseButton = document.getElementById('pause-button');
+const touchControls = document.getElementById('touch-controls');
+const leaderboardListEl = document.getElementById('leaderboard-list');
+
+// --- FIREBASE/LEADERBOARD FUNCTIONS ---
+const LEADERBOARD_COLLECTION = 'leaderboard';
+
+/**
+ * Saves the current score to the public leaderboard.
+ */
+window.saveScore = async (finalScore) => {
+    if (!window.db || !window.userId) {
+        console.log("Cannot save score: Firebase or User ID not initialized.");
+        return;
+    }
+
+    const username = window.userId.substring(0, 8); // Use first 8 chars of ID as username
+    const docId = crypto.randomUUID(); // Unique ID for the score entry
+    const leaderboardPath = `/artifacts/${appId}/public/data/${LEADERBOARD_COLLECTION}`;
+    const userDocRef = doc(window.db, leaderboardPath, docId);
+
+    try {
+        // Check if the user already has a high score document
+        const q = query(collection(window.db, leaderboardPath), where("userId", "==", window.userId), limit(1));
+        const existingDocs = await getDocs(q);
+        
+        if (!existingDocs.empty) {
+            // If an existing high score is found, only update if the new score is higher
+            const existingDoc = existingDocs.docs[0];
+            const existingScore = existingDoc.data().score;
+
+            if (finalScore > existingScore) {
+                await updateDoc(existingDoc.ref, {
+                    score: finalScore,
+                    timestamp: Date.now(),
+                    username: username, // Update username in case ID changed, though unlikely here
+                });
+                console.log("High score updated successfully.");
+            } else {
+                console.log("New score is not a personal best, not saving.");
+            }
+
+        } else {
+            // If no existing high score, create a new document
+            await setDoc(userDocRef, {
+                userId: window.userId,
+                username: username,
+                score: finalScore,
+                timestamp: Date.now(),
+            });
+            console.log("Score saved successfully.");
+        }
+    } catch (error) {
+        console.error("Error saving score to Firestore:", error);
+    }
+};
+
+/**
+ * Loads and displays the leaderboard in real-time.
+ */
+window.loadLeaderboard = () => {
+    if (!window.db) return;
+
+    const leaderboardPath = `/artifacts/${appId}/public/data/${LEADERBOARD_COLLECTION}`;
+    const q = query(collection(window.db, leaderboardPath), orderBy("score", "desc"), limit(10));
+
+    onSnapshot(q, (snapshot) => {
+        leaderboardListEl.innerHTML = '';
+        if (snapshot.empty) {
+            leaderboardListEl.innerHTML = '<p class="text-gray-400">No scores yet! Be the first!</p>';
+            return;
+        }
+
+        snapshot.docs.forEach((doc, index) => {
+            const data = doc.data();
+            const isCurrentUser = data.userId === window.userId;
+            const listItem = document.createElement('li');
+            listItem.className = `flex justify-between ${isCurrentUser ? 'text-yellow-300 font-bold' : 'text-white'}`;
+            listItem.innerHTML = `
+                <span class="w-1/12">${index + 1}.</span>
+                <span class="w-7/12 truncate">${data.username}</span>
+                <span class="w-4/12 text-right">${data.score}</span>
+            `;
+            leaderboardListEl.appendChild(listItem);
+        });
+    }, (error) => {
+        console.error("Error listening to leaderboard:", error);
+        leaderboardListEl.innerHTML = '<p class="text-red-400 text-sm">Error loading leaderboard.</p>';
+    });
+};
+
+// --- GAME LOGIC FUNCTIONS ---
+
+/**
+ * Creates an empty game board (20 rows x 10 columns).
+ */
+function createBoard() {
+    board = Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0));
+}
+
+/**
+ * Generates a random tetromino piece.
+ * @returns {object} The new piece object.
+ */
+function getRandomPiece() {
+    const index = Math.floor(Math.random() * SHAPES.length);
+    const shape = SHAPES[index];
+    const color = index + 1; // Color index starts at 1
+    const startX = Math.floor(BOARD_WIDTH / 2) - Math.floor(shape[0].length / 2);
+
+    return {
+        shape: shape,
+        color: color,
+        x: startX,
+        y: 0,
+    };
+}
+
+/**
+ * Draws the game board state onto the DOM.
+ */
+function drawBoard() {
+    boardEl.innerHTML = '';
+    board.forEach((row, r) => {
+        row.forEach((cell, c) => {
+            const block = document.createElement('div');
+            block.classList.add('block');
+            if (cell !== 0) {
+                block.classList.add(COLORS[cell]);
+            }
+            // Hide the top two rows from being fully visible
+            if (r < 2) {
+                block.style.visibility = 'hidden';
+            }
+            boardEl.appendChild(block);
+        });
+    });
+
+    if (currentPiece) {
+        drawPiece(currentPiece);
+    }
+}
+
+/**
+ * Draws a single piece onto the board in its current position.
+ * @param {object} piece - The piece to draw.
+ */
+function drawPiece(piece) {
+    piece.shape.forEach((row, r) => {
+        row.forEach((cell, c) => {
+            if (cell) {
+                const boardX = piece.x + c;
+                const boardY = piece.y + r;
+
+                if (boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
+                    const index = boardY * BOARD_WIDTH + boardX;
+                    const block = boardEl.children[index];
+                    if (block) {
+                        block.classList.remove(...COLORS);
+                        block.classList.add(COLORS[piece.color], 'current-piece-cell');
+                        block.style.visibility = 'visible'; // Ensure current piece is visible even in ghost rows
+                    }
+                }
+            }
+        });
+    });
+}
+
+/**
+ * Draws the next piece in the side panel.
+ */
+function drawNextPiece() {
+    nextPieceEl.innerHTML = '';
+    // Fill the next piece grid with empty blocks
+    for (let i = 0; i < NEXT_GRID_SIZE * NEXT_GRID_SIZE; i++) {
+        const block = document.createElement('div');
+        block.classList.add('block', 'w-1/4', 'h-1/4', 'border-gray-800');
+        nextPieceEl.appendChild(block);
+    }
+
+    if (nextPiece) {
+        const startRow = Math.floor((NEXT_GRID_SIZE - nextPiece.shape.length) / 2);
+        const startCol = Math.floor((NEXT_GRID_SIZE - nextPiece.shape[0].length) / 2);
+
+        nextPiece.shape.forEach((row, r) => {
+            row.forEach((cell, c) => {
+                if (cell) {
+                    const gridX = startCol + c;
+                    const gridY = startRow + r;
+                    const index = gridY * NEXT_GRID_SIZE + gridX;
+                    
+                    const block = nextPieceEl.children[index];
+                    if (block) {
+                        block.classList.add(COLORS[nextPiece.color]);
+                    }
+                }
+            });
+        });
+    }
+}
+
+/**
+ * Checks if the piece at the given position collides with boundaries or existing blocks.
+ * @param {object} piece - The piece to check.
+ * @returns {boolean} True if collision occurs, false otherwise.
+ */
+function checkCollision(piece) {
+    for (let r = 0; r < piece.shape.length; r++) {
+        for (let c = 0; c < piece.shape[r].length; c++) {
+            if (piece.shape[r][c]) {
+                const boardX = piece.x + c;
+                const boardY = piece.y + r;
+
+                // Check boundaries
+                if (boardX < 0 || boardX >= BOARD_WIDTH || boardY >= BOARD_HEIGHT) {
+                    return true;
+                }
+                
+                // Check for collision with existing blocks on the board (ignore top "ghost" rows)
+                if (boardY >= 0 && boardY < BOARD_HEIGHT && board[boardY][boardX] !== 0) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Locks the current piece into the board state.
+ */
+function lockPiece() {
+    currentPiece.shape.forEach((row, r) => {
+        row.forEach((cell, c) => {
+            if (cell) {
+                const boardX = currentPiece.x + c;
+                const boardY = currentPiece.y + r;
+                // Only lock blocks that are within the visible board area (Y >= 0)
+                if (boardY >= 0) {
+                    board[boardY][boardX] = currentPiece.color;
+                }
+            }
+        });
+    });
+}
+
+/**
+ * Creates animated score particles that fly out from cleared lines
+ * @param {number} points - Points earned
+ * @param {number} rowIndex - The row index where lines were cleared
+ * @param {number} linesCleared - Number of lines cleared
+ */
+function createScoreParticles(points, rowIndex, linesCleared) {
+    const boardRect = boardEl.getBoundingClientRect();
+    const particleCount = linesCleared * 4 + 2; // More particles for more lines
+    
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('score-particle');
+        
+        // Show points divided among particles or special messages
+        let displayText = '';
+        if (i === 0) {
+            if (linesCleared === 4) {
+                displayText = 'TETRIS!';
+                particle.style.fontSize = '2rem';
+                particle.style.color = '#ff0d72';
+            } else if (linesCleared === 3) {
+                displayText = `+${points}`;
+                particle.style.color = '#0dff72';
+            } else if (linesCleared === 2) {
+                displayText = `+${points}`;
+                particle.style.color = '#0dc2ff';
+            } else {
+                displayText = `+${points}`;
+            }
+        } else if (i === 1) {
+            displayText = linesCleared > 1 ? '✨' : '★';
+        } else {
+            // Create variety of particles
+            const symbols = ['★', '✦', '✧', '◆', '●', '+'];
+            displayText = symbols[Math.floor(Math.random() * symbols.length)];
+            particle.style.fontSize = `${0.8 + Math.random() * 0.7}rem`;
+        }
+        
+        particle.textContent = displayText;
+        
+        // Random position within the board horizontally, at the cleared line vertically
+        const startX = Math.random() * boardRect.width;
+        const startY = (rowIndex / BOARD_HEIGHT) * boardRect.height;
+        
+        particle.style.left = `${startX}px`;
+        particle.style.top = `${startY}px`;
+        
+        // Random trajectory for each particle - create explosion effect
+        const angle = (Math.random() * 2 * Math.PI); // Full circle
+        const distance = 40 + Math.random() * 120; // Random distance
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance - 30; // Slight upward bias
+        
+        particle.style.setProperty('--tx', `${tx}px`);
+        particle.style.setProperty('--ty', `${ty}px`);
+        
+        // Add slight delay for staggered effect
+        particle.style.animationDelay = `${Math.random() * 0.1}s`;
+        
+        document.querySelector('.board-container').appendChild(particle);
+        
+        // Remove particle after animation
+        setTimeout(() => {
+            particle.remove();
+        }, 1300 + (Math.random() * 100));
+    }
+}
+
+/**
+ * Flashes the cleared lines before removing them
+ * @param {array} clearedRows - Array of row indices that were cleared
+ */
+function flashClearedLines(clearedRows) {
+    clearedRows.forEach(rowIndex => {
+        for (let c = 0; c < BOARD_WIDTH; c++) {
+            const blockIndex = rowIndex * BOARD_WIDTH + c;
+            const block = boardEl.children[blockIndex];
+            if (block) {
+                block.classList.add('line-clear-flash');
+            }
+        }
+    });
+}
+
+/**
+ * Clears full lines and updates score/level.
+ */
+function clearLines() {
+    let linesCleared = 0;
+    const clearedRows = [];
+    
+    // Find all full lines first
+    for (let r = BOARD_HEIGHT - 1; r >= 0; r--) {
+        if (board[r].every(cell => cell !== 0)) {
+            clearedRows.push(r);
+            linesCleared++;
+        }
+    }
+
+    if (linesCleared > 0) {
+        // Flash effect on cleared lines
+        flashClearedLines(clearedRows);
+        
+        // Calculate score
+        const scoreMultiplier = [0, 1, 3, 5, 8]; // Score for 0, 1, 2, 3, 4 lines (TETRIS!)
+        const pointsEarned = scoreMultiplier[linesCleared] * SCORE_PER_LINE * level;
+        
+        // Create particles at the middle cleared row
+        const middleRow = clearedRows[Math.floor(clearedRows.length / 2)];
+        createScoreParticles(pointsEarned, middleRow, linesCleared);
+        
+        // Wait a bit for animation, then clear lines
+        setTimeout(() => {
+            // Clear the lines
+            for (let r = BOARD_HEIGHT - 1; r >= 0; r--) {
+                if (board[r].every(cell => cell !== 0)) {
+                    // Move all rows above down by one
+                    for (let rr = r; rr > 0; rr--) {
+                        board[rr] = board[rr - 1];
+                    }
+                    // Top row is now empty
+                    board[0] = Array(BOARD_WIDTH).fill(0);
+                    // Rerun the check for the same row since content has shifted
+                    r++; 
+                }
+            }
+            
+            score += pointsEarned;
+            lines += linesCleared;
+            
+            // Check for level up
+            const newLevel = Math.floor(lines / LINES_PER_LEVEL) + 1;
+            if (newLevel > level) {
+                level = newLevel;
+                restartDropInterval();
+            }
+
+            updateStats();
+            drawBoard();
+        }, 300); // Delay to show flash effect
+    }
+}
+
+/**
+ * Moves the current piece in a given direction.
+ * @param {number} dx - Change in X (column).
+ * @param {number} dy - Change in Y (row).
+ */
+function movePiece(dx, dy) {
+    if (!currentPiece) return;
+    const newPiece = { ...currentPiece, x: currentPiece.x + dx, y: currentPiece.y + dy };
+
+    if (!checkCollision(newPiece)) {
+        currentPiece = newPiece;
+        drawBoard();
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Hard drops the current piece to the bottom.
+ */
+function hardDrop() {
+    if (!currentPiece) return;
+    let drops = 0;
+    while (movePiece(0, 1)) {
+        drops++;
+    }
+    // Lock the piece immediately after hard drop
+    if (drops > 0) {
+        gameTick(true);
+    }
+}
+
+/**
+ * Rotates the current piece 90 degrees clockwise.
+ */
+function rotatePiece() {
+    if (!currentPiece) return;
+    const shape = currentPiece.shape;
+    const size = shape.length;
+    const newShape = Array.from({ length: size }, () => Array(size).fill(0));
+
+    // Perform rotation (transpose and reverse rows)
+    for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+            newShape[c][size - 1 - r] = shape[r][c];
+        }
+    }
+
+    const newPiece = { ...currentPiece, shape: newShape };
+
+    // Kick-testing: Try to move the piece slightly if the rotation causes a collision
+    const kicks = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]];
+    for (const [kx, ky] of kicks) {
+        const kickedPiece = { ...newPiece, x: newPiece.x + kx, y: newPiece.y + ky };
+        if (!checkCollision(kickedPiece)) {
+            currentPiece = kickedPiece;
+            drawBoard();
+            return;
+        }
+    }
+}
+
+/**
+ * The main game loop tick (gravity).
+ * @param {boolean} forceLock - Whether to force a lock if movement fails (used for hard drop).
+ */
+function gameTick(forceLock = false) {
+    if (!isPlaying || isPaused) return;
+
+    // 1. Try to move down
+    const moved = movePiece(0, 1);
+
+    // 2. If movement failed (collision), lock the piece
+    if (!moved || forceLock) {
+        lockPiece();
+        clearLines();
+
+        // 3. Spawn next piece
+        currentPiece = nextPiece;
+        nextPiece = getRandomPiece();
+        drawNextPiece();
+
+        // 4. Check for Game Over (new piece immediately collides)
+        if (checkCollision(currentPiece)) {
+            endGame();
+            return;
+        }
+        drawBoard(); // Draw the newly spawned piece
+    }
+}
+
+/**
+ * Updates score and level displays.
+ */
+function updateStats() {
+    scoreEl.textContent = score;
+    levelEl.textContent = level;
+}
+
+/**
+ * Starts the piece dropping interval.
+ */
+function startDropInterval() {
+    const dropDelay = INITIAL_DROP_DELAY / level;
+    if (dropIntervalId) clearInterval(dropIntervalId);
+    dropIntervalId = setInterval(gameTick, dropDelay);
+}
+
+/**
+ * Restarts the drop interval after a level change.
+ */
+function restartDropInterval() {
+    if (isPlaying && !isPaused) {
+        startDropInterval();
+    }
+}
+
+// --- GAME CONTROL ---
+
+/**
+ * Initializes and starts a new game.
+ */
+function startGame() {
+    if (isPlaying) return;
+
+    // Reset state
+    createBoard();
+    score = 0;
+    lines = 0;
+    level = 1;
+    updateStats();
+
+    // Setup initial pieces
+    currentPiece = getRandomPiece();
+    nextPiece = getRandomPiece();
+    drawNextPiece();
+
+    isPlaying = true;
+    isPaused = false;
+    statusEl.textContent = 'GAME ON!';
+    startButton.classList.add('hidden');
+    pauseButton.classList.remove('hidden');
+
+    drawBoard();
+    startDropInterval();
+    attachInputHandlers();
+}
+
+/**
+ * Pauses the game.
+ */
+function pauseGame() {
+    if (!isPlaying) return;
+
+    isPaused = !isPaused;
+    if (isPaused) {
+        clearInterval(dropIntervalId);
+        dropIntervalId = null;
+        statusEl.textContent = 'PAUSED';
+        pauseButton.textContent = 'RESUME';
+    } else {
+        startDropInterval();
+        statusEl.textContent = 'GAME ON!';
+        pauseButton.textContent = 'PAUSE';
+    }
+}
+
+/**
+ * Ends the game.
+ */
+function endGame() {
+    isPlaying = false;
+    if (dropIntervalId) clearInterval(dropIntervalId);
+    dropIntervalId = null;
+    
+    statusEl.textContent = `GAME OVER! Score: ${score}`;
+    startButton.textContent = 'RESTART';
+    startButton.classList.remove('hidden');
+    pauseButton.classList.add('hidden');
+
+    // Flash the board (optional)
+    boardEl.style.opacity = '0.5';
+    setTimeout(() => { boardEl.style.opacity = '1'; }, 100);
+    
+    // Save the final score
+    window.saveScore(score);
+
+    // Remove input handlers until restart
+    document.removeEventListener('keydown', handleKeyDown);
+    touchControls.removeEventListener('click', handleTouchControls);
+}
+
+// --- INPUT HANDLING ---
+
+function handleKeyDown(event) {
+    if (!isPlaying || isPaused) {
+        if (event.key === ' ' && !isPlaying) {
+            startGame();
+        } else if (event.key === 'p' || event.key === 'P') {
+            pauseGame();
+        }
+        return;
+    }
+
+    switch (event.key) {
+        case 'ArrowLeft':
+            movePiece(-1, 0);
+            break;
+        case 'ArrowRight':
+            movePiece(1, 0);
+            break;
+        case 'ArrowDown':
+            // Soft drop
+            movePiece(0, 1);
+            break;
+        case 'ArrowUp':
+        case 'x':
+            rotatePiece();
+            break;
+        case ' ': // Hard drop
+            hardDrop();
+            // Prevent the spacebar from scrolling the page
+            event.preventDefault(); 
+            break;
+        case 'p':
+        case 'P':
+            pauseGame();
+            break;
+    }
+}
+
+function handleTouchControls(event) {
+    const action = event.target.closest('button')?.dataset.action;
+    if (!action || !isPlaying || isPaused) return;
+
+    switch (action) {
+        case 'left':
+            movePiece(-1, 0);
+            break;
+        case 'right':
+            movePiece(1, 0);
+            break;
+        case 'down':
+            movePiece(0, 1);
+            break;
+        case 'rotate':
+            rotatePiece();
+            break;
+        case 'hard-drop':
+            hardDrop();
+            break;
+    }
+}
+
+function attachInputHandlers() {
+    document.addEventListener('keydown', handleKeyDown);
+    touchControls.addEventListener('click', handleTouchControls);
+}
+
+// --- INITIALIZATION ---
+
+startButton.addEventListener('click', startGame);
+pauseButton.addEventListener('click', pauseGame);
+
+// Initial setup for the board display (empty)
+createBoard();
+drawBoard(); 
+drawNextPiece();
+updateStats();
+
+// Attach initial keydown listener for Start/Pause functionality
+document.addEventListener('keydown', handleKeyDown);
+
+// The loadLeaderboard function will be called automatically once Firebase auth is ready.
