@@ -375,6 +375,7 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 
 ### Setup & Deployment
 - [`SETUP-NHANH.md`](docs/SETUP-NHANH.md) - Quick start (3 bước)
+- [`VITE-VERCEL-DEPLOYMENT.md`](docs/VITE-VERCEL-DEPLOYMENT.md) - Vite + Vercel deployment guide
 - [`REALTIME-DATABASE-SETUP.md`](docs/REALTIME-DATABASE-SETUP.md) - Chi tiết setup
 - [`CHECKLIST.md`](docs/CHECKLIST.md) - Step-by-step checklist
 
@@ -424,6 +425,14 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 ---
 
 ## 🎉 Changelog
+
+### v2.1.0 (2025-10-10)
+- 🚀 Added: Vite build system for development and production
+- 📦 Added: Vercel deployment configuration
+- 📚 Added: Comprehensive Vite + Vercel deployment guide
+- ⚡ Improved: Fast HMR (Hot Module Replacement) in development
+- 🔧 Improved: Build process with code splitting and optimization
+- 🌐 Added: Multiple deployment options (Vercel, Firebase Hosting)
 
 ### v2.0.0 (2025-10-10)
 - ✨ Added: Name input modal with daily limit
@@ -515,6 +524,7 @@ Set these in your Vercel project settings:
 ## Quick Links
 
 - [🚀 Quick Setup (3 bước)](docs/SETUP-NHANH.md)
+- [📦 Vite + Vercel Deployment Guide](docs/VITE-VERCEL-DEPLOYMENT.md)
 - [✅ Checklist đầy đủ](docs/CHECKLIST.md)
 - [🧪 Test Guide](docs/TEST-NAME-INPUT.md)
 - [📖 Name Feature Docs](docs/FEATURE-NAME-INPUT.md)
@@ -522,6 +532,6 @@ Set these in your Vercel project settings:
 
 ---
 
-**Current Version**: 2.0.0  
+**Current Version**: 2.1.0  
 **Last Updated**: 2025-10-10  
-**Status**: ✅ Production Ready
+**Status**: ✅ Production Ready (Vite + Vercel)
