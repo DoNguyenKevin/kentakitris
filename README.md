@@ -243,17 +243,23 @@ localStorage:
 ### Frontend
 - **HTML5** - Structure
 - **CSS3** - Pixel art styling, animations
-- **JavaScript (ES6+)** - Game logic
-- **Tailwind CSS** - Utility classes
+- **JavaScript (ES6+)** - Game logic, ES6 modules
+- **Tailwind CSS** - Utility classes (via CDN)
+- **Vite** - Build tool and dev server
 
 ### Backend
 - **Firebase Realtime Database** - Leaderboard data
 - **Firebase Authentication** - Anonymous auth
 - **Firebase Security Rules** - Access control
 
+### Build & Deployment
+- **Vite 5.x** - Fast build tool with HMR
+- **Vercel** - Recommended deployment platform
+- **Firebase Hosting** - Alternative deployment option
+
 ### Libraries
-- None! Pure vanilla JS (no dependencies)
-- Firebase SDK via CDN
+- Minimal dependencies (Vite dev dependency only)
+- Firebase SDK via CDN (runtime)
 
 ---
 
@@ -369,6 +375,7 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 
 ### Setup & Deployment
 - [`SETUP-NHANH.md`](docs/SETUP-NHANH.md) - Quick start (3 bước)
+- [`VITE-VERCEL-DEPLOYMENT.md`](docs/VITE-VERCEL-DEPLOYMENT.md) - Vite + Vercel deployment guide
 - [`REALTIME-DATABASE-SETUP.md`](docs/REALTIME-DATABASE-SETUP.md) - Chi tiết setup
 - [`CHECKLIST.md`](docs/CHECKLIST.md) - Step-by-step checklist
 
@@ -419,6 +426,14 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 
 ## 🎉 Changelog
 
+### v2.1.0 (2025-10-10)
+- 🚀 Added: Vite build system for development and production
+- 📦 Added: Vercel deployment configuration
+- 📚 Added: Comprehensive Vite + Vercel deployment guide
+- ⚡ Improved: Fast HMR (Hot Module Replacement) in development
+- 🔧 Improved: Build process with code splitting and optimization
+- 🌐 Added: Multiple deployment options (Vercel, Firebase Hosting)
+
 ### v2.0.0 (2025-10-10)
 - ✨ Added: Name input modal with daily limit
 - ✨ Added: Game over modal UI
@@ -447,17 +462,56 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 
 ---
 
-## 🎮 Live Demo
+## 🎮 Development & Deployment
 
-```
-Local: file:///path/to/index.html
+### Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server with Vite
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-**Ready to deploy?**
+### Deploy to Vercel
+
+**Option 1: Using Vercel CLI**
+```bash
+# Install Vercel CLI globally
+npm install -g vercel
+
+# Deploy
+vercel
+
+# Deploy to production
+vercel --prod
+```
+
+**Option 2: Via GitHub Integration**
+1. Push your code to GitHub
+2. Go to [vercel.com](https://vercel.com)
+3. Import your repository
+4. Vercel will automatically detect Vite configuration
+5. Click "Deploy"
+
+**Option 3: Firebase Hosting (Alternative)**
 ```bash
 firebase init hosting
 firebase deploy --only hosting
 ```
+
+### Environment Variables (Vercel)
+
+Set these in your Vercel project settings:
+- `VITE_FIREBASE_CONFIG` - Your Firebase configuration JSON
+- Other Firebase-related variables as needed
 
 ---
 
@@ -470,6 +524,7 @@ firebase deploy --only hosting
 ## Quick Links
 
 - [🚀 Quick Setup (3 bước)](docs/SETUP-NHANH.md)
+- [📦 Vite + Vercel Deployment Guide](docs/VITE-VERCEL-DEPLOYMENT.md)
 - [✅ Checklist đầy đủ](docs/CHECKLIST.md)
 - [🧪 Test Guide](docs/TEST-NAME-INPUT.md)
 - [📖 Name Feature Docs](docs/FEATURE-NAME-INPUT.md)
@@ -477,6 +532,6 @@ firebase deploy --only hosting
 
 ---
 
-**Current Version**: 2.0.0  
+**Current Version**: 2.1.0  
 **Last Updated**: 2025-10-10  
-**Status**: ✅ Production Ready
+**Status**: ✅ Production Ready (Vite + Vercel)
