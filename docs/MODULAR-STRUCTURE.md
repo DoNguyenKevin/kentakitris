@@ -6,18 +6,19 @@
 keltris/
 ├── index.html              # File HTML gốc (monolithic)
 ├── index-modular.html      # File HTML mới (sử dụng modules)
-├── index.js               # File JS gốc (monolithic)
-├── index.css              # CSS styles
-└── js/                    # Thư mục chứa các module
-    ├── main.js            # Entry point chính
-    ├── firebase-config.js # Khởi tạo Firebase
-    ├── game-constants.js  # Hằng số game
-    ├── game-state.js      # Quản lý state
-    ├── game-pieces.js     # Logic các mảnh tetromino
-    ├── game-board.js      # Render board và UI
-    ├── game-logic.js      # Logic game chính
-    ├── game-controls.js   # Xử lý input
-    └── leaderboard.js     # Chức năng leaderboard
+├── index.css               # CSS styles
+├── js/                     # Thư mục chứa các module
+│   ├── index.js            # File JS gốc (monolithic)
+│   ├── main.js             # Entry point chính
+│   ├── firebase-config.js  # Khởi tạo Firebase
+│   ├── game-constants.js   # Hằng số game
+│   ├── game-state.js       # Quản lý state
+│   ├── game-pieces.js      # Logic các mảnh tetromino
+│   ├── game-board.js       # Render board và UI
+│   ├── game-logic.js       # Logic game chính
+│   ├── game-controls.js    # Xử lý input
+│   └── leaderboard.js      # Chức năng leaderboard
+└── docs/                   # Tài liệu dự án
 ```
 
 ## Mô tả các module
@@ -103,7 +104,7 @@ keltris/
 
 ## Migration từ monolithic sang modular
 
-File gốc `index.html` và `index.js` vẫn được giữ nguyên. Để chuyển sang phiên bản modular:
+File gốc `index.html` và `js/index.js` vẫn được giữ nguyên. Để chuyển sang phiên bản modular:
 
 1. Sử dụng `index-modular.html` thay vì `index.html`
 2. Đảm bảo chạy qua HTTP server
