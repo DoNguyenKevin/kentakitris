@@ -35,7 +35,10 @@
                 <div id="score-display" class="text-3xl">0</div>
                 <div class="h-px bg-gray-500 my-3"></div>
                 <h2 class="text-lg mb-2 text-yellow-500">LEVEL</h2>
-                <div id="level-display" class="text-2xl">1</div>
+                <div class="flex items-baseline gap-2">
+                    <div id="level-display" class="text-2xl">1</div>
+                    <div id="speed-display" class="text-sm text-gray-400 hidden"></div>
+                </div>
             </div>
 
             <!-- Next Piece Display -->
@@ -62,6 +65,9 @@
             </button>
             <button id="pause-button" class="touch-button text-xl text-black bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 w-full hidden">
                 PAUSE
+            </button>
+            <button id="settings-button" class="touch-button text-lg text-black bg-gray-500 hover:bg-gray-600 active:bg-gray-700 w-full">
+                ⚙️ SETTINGS
             </button>
         </div>
     </div>
@@ -132,6 +138,33 @@
             <div class="text-center">
                 <p class="text-gray-400 text-sm mb-2">⏱️ Choose wisely! This will affect your game.</p>
                 <p id="active-powerups-display" class="text-purple-300 text-xs">Active: None</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-900 border-4 border-blue-500 p-8 max-w-md w-full mx-4 pixel-border">
+            <h2 class="text-2xl font-bold text-blue-400 mb-6 text-center">⚙️ SETTINGS</h2>
+            
+            <div class="space-y-6">
+                <!-- Show Speed Setting -->
+                <div class="flex items-center justify-between bg-gray-800 p-4 rounded">
+                    <div>
+                        <label class="text-white text-lg font-bold block mb-1">Show Speed</label>
+                        <p class="text-gray-400 text-sm">Display drop speed (ms) beside level</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="show-speed-toggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <button id="settings-close-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 text-lg">
+                    CLOSE
+                </button>
             </div>
         </div>
     </div>

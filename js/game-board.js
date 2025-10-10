@@ -170,10 +170,26 @@ export function flashClearedLines(clearedRows) {
 
 /**
  * Updates score and level displays.
+ * @param {number} score - Current score
+ * @param {number} level - Current level
+ * @param {number} speed - Current drop speed in ms (optional)
  */
-export function updateStats(score, level) {
+export function updateStats(score, level, speed) {
     const scoreEl = document.getElementById('score-display');
     const levelEl = document.getElementById('level-display');
+    const speedEl = document.getElementById('speed-display');
+    
     scoreEl.textContent = score;
     levelEl.textContent = level;
+    
+    // Update speed display if provided and settings allow it
+    if (speed !== undefined && speedEl) {
+        const showSpeed = localStorage.getItem('showSpeed') === 'true';
+        if (showSpeed) {
+            speedEl.textContent = `(${speed}ms)`;
+            speedEl.classList.remove('hidden');
+        } else {
+            speedEl.classList.add('hidden');
+        }
+    }
 }
