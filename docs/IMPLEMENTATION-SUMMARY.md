@@ -37,7 +37,6 @@ File: `database.rules.clean.json`
 
 | File | Mục đích |
 |------|----------|
-| `test-leaderboard.html` | Tool test độc lập, dễ debug |
 | `database.rules.json` | Rules có comments giải thích |
 | `database.rules.clean.json` | Rules clean để copy vào Firebase |
 | `REALTIME-DATABASE-SETUP.md` | Hướng dẫn đầy đủ chi tiết |
@@ -65,9 +64,9 @@ File: `database.rules.clean.json`
 
 ### Test:
 
-1. Mở `test-leaderboard.html` → Submit test score
-2. Mở `index.html` → Chơi game
-3. Check Firebase Console → Data
+1. Mở `index.html` → Chơi game
+2. Check score tự động lưu sau game over
+3. Check Firebase Console → Data có entries mới
 
 ## 📊 So sánh Firestore vs Realtime DB
 
@@ -162,7 +161,7 @@ Leaderboard hoạt động nếu:
 - Firebase Console: https://console.firebase.google.com/project/kentakitris
 - Documentation: `REALTIME-DATABASE-SETUP.md`
 - Quick Start: `SETUP-NHANH.md`
-- Test Tool: `test-leaderboard.html`
+- Main Game: `index.html`
 
 ---
 

@@ -36,15 +36,7 @@ Link: https://console.firebase.google.com/project/kentakitris
 
 ## 🧪 Test ngay
 
-### Cách 1: Dùng tool test
-```
-Mở file: test-leaderboard.html
-```
-- Nhập tên và điểm
-- Click Submit
-- Xem leaderboard realtime
-
-### Cách 2: Chơi game
+### Chơi game
 ```
 Mở file: index.html
 ```
@@ -95,7 +87,7 @@ firebase deploy --only hosting
 
 ### Leaderboard trống
 - Chơi thử một game để tạo dữ liệu
-- Mở `test-leaderboard.html` để submit điểm thử
+- Check Firebase Console → Data có thấy entries không
 
 ### Score không lưu
 - Mở Console (F12) xem log
@@ -107,7 +99,6 @@ firebase deploy --only hosting
 | File | Dùng để làm gì |
 |------|---------------|
 | `index.html` | Game chính (đã tích hợp sẵn) |
-| `test-leaderboard.html` | Test leaderboard riêng |
 | `database.rules.clean.json` | Copy vào Firebase Console |
 | `REALTIME-DATABASE-SETUP.md` | Hướng dẫn chi tiết hơn |
 | `README-LEADERBOARD.md` | Tổng quan tính năng |

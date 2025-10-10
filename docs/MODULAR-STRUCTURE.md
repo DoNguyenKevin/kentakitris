@@ -4,12 +4,11 @@
 
 ```
 keltris/
-├── index.html              # File HTML gốc (monolithic)
-├── index-modular.html      # File HTML mới (sử dụng modules)
+├── index.html              # File HTML chính
+├── index-modular.html      # File HTML sử dụng modules (alternative)
 ├── index.css               # CSS styles
 ├── js/                     # Thư mục chứa các module
-│   ├── index.js            # File JS gốc (monolithic)
-│   ├── main.js             # Entry point chính
+│   ├── main.js             # Entry point chính (cho index-modular.html)
 │   ├── firebase-config.js  # Khởi tạo Firebase
 │   ├── game-constants.js   # Hằng số game
 │   ├── game-state.js       # Quản lý state
@@ -102,12 +101,16 @@ keltris/
 5. **Làm việc nhóm**: Nhiều người có thể làm việc trên các file khác nhau
 6. **Testing**: Dễ dàng test từng module riêng lẻ
 
-## Migration từ monolithic sang modular
+## Migration và sử dụng
 
-File gốc `index.html` và `js/index.js` vẫn được giữ nguyên. Để chuyển sang phiên bản modular:
+Dự án có hai phiên bản HTML:
+- **index.html**: File chính, sử dụng `js/index-game.js` và `js/index-firebase-init.js`
+- **index-modular.html**: Phiên bản thay thế, sử dụng cấu trúc module ES6 với `js/main.js`
 
-1. Sử dụng `index-modular.html` thay vì `index.html`
-2. Đảm bảo chạy qua HTTP server
+Để sử dụng phiên bản modular:
+
+1. Mở `index-modular.html` trong browser (thay vì `index.html`)
+2. Đảm bảo chạy qua HTTP server (không thể chạy trực tiếp file://)
 3. Kiểm tra console để đảm bảo không có lỗi import
 
 ## Troubleshooting
