@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard Test - Realtime Database</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-yellow-400">🎮 Leaderboard Test</h1>
+        
+        <div class="bg-gray-800 p-6 rounded-lg mb-6">
+            <h2 class="text-xl mb-4">Authentication Status</h2>
+            <p id="auth-status" class="text-gray-400">Connecting...</p>
+            <p id="user-id" class="text-sm text-gray-500 mt-2"></p>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-lg mb-6">
+            <h2 class="text-xl mb-4">Submit Test Score</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm mb-2">Player Name</label>
+                    <input 
+                        id="name-input" 
+                        type="text" 
+                        maxlength="20" 
+                        class="w-full p-2 bg-gray-900 border border-gray-600 rounded"
+                        placeholder="Enter your name"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm mb-2">Score</label>
+                    <input 
+                        id="score-input" 
+                        type="number" 
+                        min="0"
+                        class="w-full p-2 bg-gray-900 border border-gray-600 rounded"
+                        placeholder="Enter score"
+                    />
+                </div>
+                <button 
+                    id="submit-btn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded font-bold disabled:opacity-50"
+                >
+                    Submit Score
+                </button>
+                <p id="submit-status" class="text-sm text-gray-400"></p>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <h2 class="text-xl mb-4">🏆 Top 10 Leaderboard</h2>
+            <ol id="leaderboard" class="space-y-2">
+                <li class="text-gray-400">Loading...</li>
+            </ol>
+        </div>
+
+        <div class="mt-6 bg-gray-800 p-6 rounded-lg">
+            <h2 class="text-xl mb-4">📊 Database Structure Preview</h2>
+            <pre id="data-preview" class="text-xs bg-gray-900 p-4 rounded overflow-x-auto text-green-400">Loading...</pre>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, query, orderByChild, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB20BwcVcwBBLQc8p-hPH6v2dd1Ag8uvgk",
+            authDomain: "kentakitris.firebaseapp.com",
+            databaseURL: "https://kentakitris-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kentakitris",
+            storageBucket: "kentakitris.firebasestorage.app",
+            messagingSenderId: "813070706725",
+            appId: "1:813070706725:web:50bdddc7bdfa897ab877cc"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        // DOM elements
+        const authStatus = document.getElementById('auth-status');
+        const userIdEl = document.getElementById('user-id');
+        const nameInput = document.getElementById('name-input');
+        const scoreInput = document.getElementById('score-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const submitStatus = document.getElementById('submit-status');
+        const leaderboardEl = document.getElementById('leaderboard');
+        const dataPreview = document.getElementById('data-preview');
+
+        let userId = null;
+
+        // Load saved name
+        nameInput.value = localStorage.getItem('playerName') || '';
+
+        // Save name on change
+        nameInput.addEventListener('input', (e) => {
+            localStorage.setItem('playerName', e.target.value);
+        });
+
+        // Authentication
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                authStatus.textContent = '✅ Connected';
+                authStatus.className = 'text-green-400';
+                userIdEl.textContent = `User ID: ${userId}`;
+                submitBtn.disabled = false;
+                
+                // Auto-fill name if empty
+                if (!nameInput.value) {
+                    nameInput.value = userId.substring(0, 8);
+                }
+
+                // Start listening to leaderboard
+                listenLeaderboard();
+                previewData();
+            } else {
+                authStatus.textContent = '⏳ Signing in...';
+                authStatus.className = 'text-yellow-400';
+                submitBtn.disabled = true;
+            }
+        });
+
+        // Sign in anonymously
+        signInAnonymously(auth).catch(error => {
+            console.error("Sign-in failed:", error);
+            authStatus.textContent = '❌ Sign-in failed';
+            authStatus.className = 'text-red-400';
+        });
+
+        // Submit score
+        submitBtn.addEventListener('click', async () => {
+            const name = nameInput.value.trim() || userId.substring(0, 8);
+            const score = parseInt(scoreInput.value);
+
+            if (!score || score < 0) {
+                submitStatus.textContent = '❌ Please enter a valid score';
+                submitStatus.className = 'text-red-400';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitStatus.textContent = '⏳ Submitting...';
+            submitStatus.className = 'text-yellow-400';
+
+            try {
+                const userRef = ref(db, `leaderboards/global/${userId}`);
+                
+                // Check existing score
+                const snapshot = await get(userRef);
+                const existingData = snapshot.val();
+
+                if (existingData && score <= existingData.score) {
+                    submitStatus.textContent = `⚠️ Score ${score} is not higher than your best (${existingData.score})`;
+                    submitStatus.className = 'text-yellow-400';
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                // Save score
+                await set(userRef, {
+                    name: name,
+                    score: score,
+                    updatedAt: Date.now()
+                });
+
+                submitStatus.textContent = existingData 
+                    ? `🎉 New high score! ${score} (Previous: ${existingData.score})`
+                    : `✅ Score submitted: ${score}`;
+                submitStatus.className = 'text-green-400';
+
+                // Clear input
+                scoreInput.value = '';
+            } catch (error) {
+                console.error("Submit error:", error);
+                submitStatus.textContent = `❌ Error: ${error.message}`;
+                submitStatus.className = 'text-red-400';
+            }
+
+            submitBtn.disabled = false;
+        });
+
+        // Listen to leaderboard
+        function listenLeaderboard() {
+            const leaderboardRef = ref(db, 'leaderboards/global');
+            const topScoresQuery = query(leaderboardRef, orderByChild('score'), limitToLast(10));
+
+            onValue(topScoresQuery, (snapshot) => {
+                const scores = [];
+                snapshot.forEach((childSnapshot) => {
+                    scores.push({
+                        uid: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+
+                // Sort descending
+                scores.sort((a, b) => b.score - a.score);
+
+                // Display
+                if (scores.length === 0) {
+                    leaderboardEl.innerHTML = '<li class="text-gray-400">No scores yet. Be the first!</li>';
+                    return;
+                }
+
+                leaderboardEl.innerHTML = scores.map((entry, i) => {
+                    const isCurrentUser = entry.uid === userId;
+                    const date = new Date(entry.updatedAt).toLocaleString('vi-VN');
+                    return `
+                        <li class="flex justify-between items-center p-2 rounded ${isCurrentUser ? 'bg-yellow-900/30 border border-yellow-600' : 'bg-gray-900'}">
+                            <span class="font-bold text-yellow-400">#${i + 1}</span>
+                            <span class="flex-1 mx-4 ${isCurrentUser ? 'text-yellow-300 font-bold' : ''}">${entry.name}</span>
+                            <span class="font-mono ${isCurrentUser ? 'text-yellow-300 font-bold' : 'text-gray-400'}">${entry.score}</span>
+                            <span class="text-xs text-gray-600 ml-4">${date}</span>
+                        </li>
+                    `;
+                }).join('');
+            }, (error) => {
+                console.error("Leaderboard error:", error);
+                leaderboardEl.innerHTML = `<li class="text-red-400">Error: ${error.message}</li>`;
+            });
+        }
+
+        // Preview raw data
+        async function previewData() {
+            const leaderboardRef = ref(db, 'leaderboards/global');
+            
+            onValue(leaderboardRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    dataPreview.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    dataPreview.textContent = '{ } (empty)';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

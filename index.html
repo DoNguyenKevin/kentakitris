@@ -8,69 +8,67 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load custom CSS -->
     <link rel="stylesheet" href="index.css">
-    <!-- Load Firebase SDKs -->
+    <!-- Load Firebase SDKs - Realtime Database -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, limit, orderBy, getDocs, updateDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getDatabase, ref, set, query, orderByChild, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-        // Set Firebase log level to debug for development purposes (can be removed later)
-        setLogLevel('Debug');
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB20BwcVcwBBLQc8p-hPH6v2dd1Ag8uvgk",
+            authDomain: "kentakitris.firebaseapp.com",
+            databaseURL: "https://kentakitris-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kentakitris",
+            storageBucket: "kentakitris.firebasestorage.app",
+            messagingSenderId: "813070706725",
+            appId: "1:813070706725:web:50bdddc7bdfa897ab877cc",
+            measurementId: "G-DMJSY5GMQS"
+        };
 
-        // Global variables provided by the environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        
+        // Global variables
+        let userId = null;
+        let playerName = localStorage.getItem('playerName') || null;
 
-        let app, db, auth, userId = null;
+        // Attach to window for game logic access
+        window.db = db;
+        window.auth = auth;
 
-        if (Object.keys(firebaseConfig).length > 0) {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            window.db = db; // Attach to window for game logic access
-            window.auth = auth; // Attach to window for game logic access
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                } else {
-                    // Sign in anonymously if no custom token is provided or if sign-in failed
-                    try {
-                        await signInAnonymously(auth);
-                        userId = auth.currentUser.uid;
-                    } catch (error) {
-                        console.error("Anonymous sign-in failed:", error);
-                    }
-                }
-                window.userId = userId; // Attach to window for game logic access
-                document.getElementById('user-id-display').textContent = userId ? `Player ID: ${userId}` : 'Authenticating...';
+        // Authentication
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                window.userId = userId;
                 
-                // Once authenticated, start listening to the leaderboard
-                if (userId && window.loadLeaderboard) {
+                // Display user info
+                const shortId = userId.substring(0, 8);
+                const displayName = playerName || shortId;
+                document.getElementById('user-id-display').textContent = `Player: ${displayName}`;
+                
+                // Start listening to leaderboard once authenticated
+                if (window.loadLeaderboard) {
                     window.loadLeaderboard();
                 }
-            });
-
-            // Try to sign in with custom token if available
-            if (initialAuthToken) {
-                signInWithCustomToken(auth, initialAuthToken).catch(error => {
-                    console.error("Custom sign-in failed, proceeding with anonymous sign-in.", error);
-                    signInAnonymously(auth);
-                });
             } else {
-                signInAnonymously(auth);
+                // Sign in anonymously
+                try {
+                    await signInAnonymously(auth);
+                } catch (error) {
+                    console.error("Anonymous sign-in failed:", error);
+                    document.getElementById('user-id-display').textContent = 'Auth failed';
+                }
             }
-        } else {
-             // Fallback if Firebase config is missing
-             console.warn("Firebase configuration is missing. Leaderboard functionality is disabled.");
-             document.getElementById('leaderboard-container').innerHTML = '<p class="text-red-400 text-sm">Leaderboard disabled (Missing Firebase config).</p>';
-             window.db = null;
-             window.auth = null;
-             window.userId = crypto.randomUUID(); // Mock user ID for local use
-             document.getElementById('user-id-display').textContent = `Mock ID: ${window.userId}`;
-        }
+        });
+
+        // Start authentication
+        signInAnonymously(auth).catch(error => {
+            console.error("Initial sign-in failed:", error);
+        });
     </script>
 </head>
 <body class="selection:bg-yellow-400 selection:text-black">
@@ -202,11 +200,11 @@
         const touchControls = document.getElementById('touch-controls');
         const leaderboardListEl = document.getElementById('leaderboard-list');
 
-        // --- FIREBASE/LEADERBOARD FUNCTIONS ---
-        const LEADERBOARD_COLLECTION = 'leaderboard';
+        // --- FIREBASE/LEADERBOARD FUNCTIONS (REALTIME DATABASE) ---
 
         /**
-         * Saves the current score to the public leaderboard.
+         * Saves the current score to the Realtime Database leaderboard.
+         * Only updates if the new score is higher than the existing one.
          */
         window.saveScore = async (finalScore) => {
             if (!window.db || !window.userId) {
@@ -214,72 +212,92 @@
                 return;
             }
 
-            const username = window.userId.substring(0, 8); // Use first 8 chars of ID as username
-            const docId = crypto.randomUUID(); // Unique ID for the score entry
-            const leaderboardPath = `/artifacts/${appId}/public/data/${LEADERBOARD_COLLECTION}`;
-            const userDocRef = doc(window.db, leaderboardPath, docId);
+            const { ref, set, get } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
+            
+            // Get player name from localStorage or use short ID
+            const playerName = localStorage.getItem('playerName') || window.userId.substring(0, 8);
+            const userRef = ref(window.db, `leaderboards/global/${window.userId}`);
 
             try {
-                // Check if the user already has a high score document
-                const q = query(collection(window.db, leaderboardPath), where("userId", "==", window.userId), limit(1));
-                const existingDocs = await getDocs(q);
-                
-                if (!existingDocs.empty) {
-                    // If an existing high score is found, only update if the new score is higher
-                    const existingDoc = existingDocs.docs[0];
-                    const existingScore = existingDoc.data().score;
+                // Check existing score
+                const snapshot = await get(userRef);
+                const existingData = snapshot.val();
 
-                    if (finalScore > existingScore) {
-                        await updateDoc(existingDoc.ref, {
-                            score: finalScore,
-                            timestamp: Date.now(),
-                            username: username, // Update username in case ID changed, though unlikely here
-                        });
-                        console.log("High score updated successfully.");
-                    } else {
-                        console.log("New score is not a personal best, not saving.");
-                    }
-
-                } else {
-                    // If no existing high score, create a new document
-                    await setDoc(userDocRef, {
-                        userId: window.userId,
-                        username: username,
+                // Only save if no existing score OR new score is higher
+                if (!existingData || finalScore > existingData.score) {
+                    await set(userRef, {
+                        name: playerName,
                         score: finalScore,
-                        timestamp: Date.now(),
+                        updatedAt: Date.now()
                     });
-                    console.log("Score saved successfully.");
+                    console.log(`Score saved: ${finalScore} (Previous: ${existingData?.score || 0})`);
+                    
+                    // Show success message
+                    if (existingData && finalScore > existingData.score) {
+                        alert(`🎉 New High Score! ${finalScore} (Previous: ${existingData.score})`);
+                    }
+                } else {
+                    console.log(`Score ${finalScore} not saved. Current best: ${existingData.score}`);
                 }
             } catch (error) {
-                console.error("Error saving score to Firestore:", error);
+                console.error("Error saving score to Realtime Database:", error);
             }
         };
 
         /**
          * Loads and displays the leaderboard in real-time.
+         * Shows top 10 scores, sorted by score descending.
          */
         window.loadLeaderboard = () => {
             if (!window.db) return;
 
-            const leaderboardPath = `/artifacts/${appId}/public/data/${LEADERBOARD_COLLECTION}`;
-            const q = query(collection(window.db, leaderboardPath), orderBy("score", "desc"), limit(10));
+            const { ref, query, orderByChild, limitToLast, onValue } = 
+                window.loadLeaderboard.imports || {};
+            
+            // Import the functions if not already cached
+            if (!window.loadLeaderboard.imports) {
+                import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js")
+                    .then(module => {
+                        window.loadLeaderboard.imports = module;
+                        window.loadLeaderboard(); // Retry after imports
+                    });
+                return;
+            }
 
-            onSnapshot(q, (snapshot) => {
+            const leaderboardRef = ref(window.db, 'leaderboards/global');
+            const topScoresQuery = query(leaderboardRef, orderByChild('score'), limitToLast(10));
+
+            // Listen to real-time updates
+            onValue(topScoresQuery, (snapshot) => {
+                const scores = [];
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    scores.push({
+                        uid: childSnapshot.key,
+                        name: data.name,
+                        score: data.score,
+                        updatedAt: data.updatedAt
+                    });
+                });
+
+                // Sort descending (limitToLast gives ascending order)
+                scores.sort((a, b) => b.score - a.score);
+
+                // Display leaderboard
                 leaderboardListEl.innerHTML = '';
-                if (snapshot.empty) {
+                if (scores.length === 0) {
                     leaderboardListEl.innerHTML = '<p class="text-gray-400">No scores yet! Be the first!</p>';
                     return;
                 }
 
-                snapshot.docs.forEach((doc, index) => {
-                    const data = doc.data();
-                    const isCurrentUser = data.userId === window.userId;
+                scores.forEach((entry, index) => {
+                    const isCurrentUser = entry.uid === window.userId;
                     const listItem = document.createElement('li');
                     listItem.className = `flex justify-between ${isCurrentUser ? 'text-yellow-300 font-bold' : 'text-white'}`;
                     listItem.innerHTML = `
                         <span class="w-1/12">${index + 1}.</span>
-                        <span class="w-7/12 truncate">${data.username}</span>
-                        <span class="w-4/12 text-right">${data.score}</span>
+                        <span class="w-7/12 truncate">${entry.name}</span>
+                        <span class="w-4/12 text-right">${entry.score}</span>
                     `;
                     leaderboardListEl.appendChild(listItem);
                 });
@@ -757,29 +775,5 @@
 
     </script>
 
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyB20BwcVcwBBLQc8p-hPH6v2dd1Ag8uvgk",
-    authDomain: "kentakitris.firebaseapp.com",
-    databaseURL: "https://kentakitris-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "kentakitris",
-    storageBucket: "kentakitris.firebasestorage.app",
-    messagingSenderId: "813070706725",
-    appId: "1:813070706725:web:50bdddc7bdfa897ab877cc",
-    measurementId: "G-DMJSY5GMQS"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
 </body>
 </html>
