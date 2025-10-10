@@ -38,6 +38,14 @@
 - ✅ **Skip option** - Linh hoạt, không bắt buộc
 - ✅ **Mobile friendly** - Responsive trên mọi thiết bị
 
+### ⚙️ Settings Feature (NEW!)
+- ✅ **Settings Modal** - Modal cài đặt game
+- ✅ **Show Speed Toggle** - Hiển thị tốc độ rơi (ms) bên cạnh level
+- ✅ **Real-time Updates** - Thay đổi áp dụng ngay lập tức
+- ✅ **LocalStorage Persistence** - Lưu cài đặt vĩnh viễn
+- ✅ **Dynamic Speed Display** - Tốc độ tự động tính theo level (1000ms/level)
+- ✅ **Both Versions** - Hoạt động trên cả index.html và index-modular.html
+
 ---
 
 ## 🚀 Quick Start
