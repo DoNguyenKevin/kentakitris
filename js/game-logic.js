@@ -132,14 +132,33 @@ export function rotatePiece() {
 }
 
 /**
- * Clears full lines and updates score/level.
+ * ✅ Xóa các hàng đã đầy và cập nhật điểm/level
+ * 
+ * Mục tiêu: Tìm hàng đã đầy (10 ô đều có màu), xóa nó, và tính điểm
+ * 
+ * Cách hoạt động:
+ * 1. Duyệt qua tất cả hàng từ dưới lên (hàng 19 → hàng 0)
+ * 2. Kiểm tra hàng nào đầy (mọi ô đều khác 0)
+ * 3. Đánh dấu các hàng đầy
+ * 4. Hiệu ứng flash (nhấp nháy)
+ * 5. Xóa hàng và kéo các hàng phía trên xuống
+ * 6. Cộng điểm và kiểm tra lên level
+ * 
+ * Công thức điểm:
+ * - Xóa 1 hàng: 10 điểm
+ * - Xóa 2 hàng: 30 điểm (bonus!)
+ * - Xóa 3 hàng: 60 điểm (bonus lớn!)
+ * - Xóa 4 hàng: 100 điểm (Tetris!)
+ * 
+ * Try it: Xếp đầy 1 hàng để xem hiệu ứng!
  */
 export function clearLines() {
     let linesCleared = 0;
     const clearedRows = [];
     
-    // Find all full lines first
+    // 1. Tìm tất cả hàng đã đầy
     for (let r = BOARD_HEIGHT - 1; r >= 0; r--) {
+        // .every() kiểm tra MỌI ô đều thỏa điều kiện
         if (board[r].every(cell => cell !== 0)) {
             clearedRows.push(r);
             linesCleared++;
@@ -147,60 +166,90 @@ export function clearLines() {
     }
 
     if (linesCleared > 0) {
-        // Flash the lines before removing them
+        // 2. Hiệu ứng flash (nhấp nháy) để người chơi thấy
         flashClearedLines(clearedRows);
         
-        // Wait for flash animation to complete before removing lines
+        // 3. Chờ hiệu ứng flash xong rồi mới xóa hàng
         setTimeout(() => {
-            // Remove the cleared lines and add empty lines at the top
-            clearedRows.sort((a, b) => a - b); // Sort in ascending order
+            // 4. Xóa các hàng đầy và thêm hàng trống lên trên
+            clearedRows.sort((a, b) => a - b); // Sắp xếp từ nhỏ đến lớn
             clearedRows.forEach(() => {
-                // Find and remove the first full line
+                // Tìm và xóa hàng đầy đầu tiên
                 for (let r = BOARD_HEIGHT - 1; r >= 0; r--) {
                     if (board[r].every(cell => cell !== 0)) {
-                        board.splice(r, 1);
-                        board.unshift(Array(BOARD_WIDTH).fill(0));
+                        board.splice(r, 1); // Xóa hàng này
+                        board.unshift(Array(BOARD_WIDTH).fill(0)); // Thêm hàng trống lên trên
                         break;
                     }
                 }
             });
 
-            // Update score with multiplier
+            // 5. Tính điểm (có nhân số hàng xóa để có bonus!)
+            // Công thức: SCORE_PER_LINE × linesCleared × linesCleared
+            // Ví dụ: Xóa 2 hàng = 10 × 2 × 2 = 40 điểm
             const pointsEarned = SCORE_PER_LINE * linesCleared * linesCleared;
             const newScore = score + pointsEarned;
             setScore(newScore);
             
-            // Create score particles at the middle cleared row
+            // Tạo hiệu ứng số điểm bay lên
             const middleRow = clearedRows[Math.floor(clearedRows.length / 2)];
             createScoreParticles(pointsEarned, middleRow, linesCleared);
 
-            // Update lines and check for level up
+            // 6. Cập nhật số hàng đã xóa và kiểm tra lên level
             const newLines = lines + linesCleared;
             setLines(newLines);
             
+            // Công thức level: Mỗi 10 hàng lên 1 cấp
             const newLevel = Math.floor(newLines / LINES_PER_LEVEL) + 1;
             if (newLevel > level) {
                 setLevel(newLevel);
-                restartDropInterval(); // Speed up the game
+                restartDropInterval(); // Tăng tốc độ game (mảnh rơi nhanh hơn)
             }
 
-            drawBoard();
-        }, 600); // Wait for flash animation (0.3s * 2 iterations)
+            drawBoard(); // Vẽ lại board
+        }, 600); // Chờ 600ms cho hiệu ứng flash (0.3s × 2 lần)
     }
 }
 
 /**
- * Spawns the next piece and checks for game over.
- * @returns {boolean} True if game continues, false if game over.
+ * ✅ Tạo mảnh mới và kiểm tra Game Over
+ * 
+ * Mục tiêu: Lấy mảnh tiếp theo làm mảnh hiện tại, tạo mảnh mới
+ * 
+ * Cách hoạt động:
+ * 1. Mảnh "tiếp theo" trở thành mảnh "hiện tại"
+ * 2. Tạo mảnh "tiếp theo" mới (ngẫu nhiên)
+ * 3. Kiểm tra mảnh mới có va chạm ngay không
+ * 4. Nếu va chạm ngay = board đã đầy = GAME OVER!
+ * 
+ * Game Over xảy ra khi:
+ * - Mảnh mới xuất hiện nhưng bị chặn bởi các mảnh cũ
+ * - Thường là do board gần đầy đến mức không còn chỗ
+ * 
+ * Try it: Xếp hết đến trên cùng để thấy Game Over!
+ * 
+ * @returns {boolean} true nếu game tiếp tục, false nếu game over
  */
 export function spawnNextPiece() {
+    // Mảnh tiếp theo → mảnh hiện tại
     setCurrentPiece(nextPiece);
+    // Tạo mảnh tiếp theo mới
     setNextPiece(getRandomPiece());
     
-    // Check if the new piece immediately collides (game over condition)
+    // Kiểm tra va chạm ngay lập tức = Game Over!
     if (checkCollision(currentPiece)) {
-        return false; // Game over
+        return false; // Game over 😢
     }
     
-    return true; // Game continues
+    return true; // Game tiếp tục! 🎮
 }
+
+// ❓ Câu hỏi: Tại sao có "mảnh tiếp theo"?
+// 💡 Trả lời: Để người chơi biết trước và lên chiến thuật!
+//            Đây là tính năng quan trọng của Tetris.
+
+// ❓ Câu hỏi: Làm sao tránh Game Over?
+// 💡 Trả lời: 
+//     - Xóa hàng thường xuyên, đừng để đống cao
+//     - Không để khoảng trống giữa các mảnh
+//     - Chơi nhanh hơn khi level cao
