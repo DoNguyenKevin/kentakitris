@@ -445,3 +445,286 @@ body {
         padding: 0.6rem;
     }
 }
+
+/* ===== POWERUP MODAL STYLES ===== */
+
+/* Powerup modal container */
+#powerup-modal .pixel-border {
+    max-width: 800px;
+    min-height: 400px;
+}
+
+/* Powerup cards grid */
+#powerup-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+/* Individual powerup card */
+.powerup-card {
+    background: linear-gradient(135deg, #2c314c 0%, #1a1a2e 100%);
+    border: 3px solid #4a4e69;
+    border-radius: 8px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.powerup-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.powerup-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    border-color: #fff;
+}
+
+.powerup-card:hover::before {
+    left: 100%;
+}
+
+.powerup-card:active {
+    transform: translateY(-2px) scale(0.98);
+}
+
+/* Rarity-specific styles */
+.powerup-card[data-rarity="common"] {
+    border-color: #9ca3af;
+}
+
+.powerup-card[data-rarity="common"]:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 8px 16px rgba(156, 163, 175, 0.4);
+}
+
+.powerup-card[data-rarity="uncommon"] {
+    border-color: #10b981;
+}
+
+.powerup-card[data-rarity="uncommon"]:hover {
+    border-color: #34d399;
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.5);
+}
+
+.powerup-card[data-rarity="rare"] {
+    border-color: #3b82f6;
+}
+
+.powerup-card[data-rarity="rare"]:hover {
+    border-color: #60a5fa;
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.6);
+}
+
+.powerup-card[data-rarity="legendary"] {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #451a03 0%, #78350f 100%);
+    animation: legendary-glow 2s ease-in-out infinite;
+}
+
+.powerup-card[data-rarity="legendary"]:hover {
+    border-color: #fbbf24;
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.7);
+}
+
+@keyframes legendary-glow {
+    0%, 100% {
+        box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 16px rgba(245, 158, 11, 0.6);
+    }
+}
+
+/* Powerup card header */
+.powerup-name {
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.powerup-card[data-rarity="legendary"] .powerup-name {
+    color: #fbbf24;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+.powerup-card[data-rarity="rare"] .powerup-name {
+    color: #60a5fa;
+}
+
+.powerup-card[data-rarity="uncommon"] .powerup-name {
+    color: #34d399;
+}
+
+/* Powerup type and rarity badges */
+.powerup-badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.powerup-type,
+.powerup-rarity {
+    font-size: 0.6rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.powerup-type {
+    background-color: #4a4e69;
+    color: #bbd0ff;
+}
+
+.powerup-rarity {
+    background-color: #1a1a2e;
+}
+
+.powerup-rarity[data-rarity="common"] {
+    color: #9ca3af;
+}
+
+.powerup-rarity[data-rarity="uncommon"] {
+    color: #10b981;
+}
+
+.powerup-rarity[data-rarity="rare"] {
+    color: #3b82f6;
+}
+
+.powerup-rarity[data-rarity="legendary"] {
+    color: #f59e0b;
+}
+
+/* Powerup description */
+.powerup-description {
+    font-size: 0.65rem;
+    line-height: 1.4;
+    color: #bbd0ff;
+    margin-bottom: 0.75rem;
+}
+
+/* Powerup duration */
+.powerup-duration {
+    font-size: 0.6rem;
+    color: #f9f9f9;
+    background-color: rgba(74, 78, 105, 0.5);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+/* Active powerups display */
+#active-powerups-display {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 300px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.active-powerup {
+    background-color: rgba(44, 49, 76, 0.95);
+    border: 2px solid #4a4e69;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.active-powerup-name {
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 0.25rem;
+}
+
+.active-powerup-timer {
+    font-size: 0.6rem;
+    color: #bbd0ff;
+}
+
+/* Responsive powerup modal */
+@media (max-width: 768px) {
+    #powerup-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .powerup-card {
+        padding: 1rem;
+    }
+    
+    .powerup-name {
+        font-size: 0.75rem;
+    }
+    
+    .powerup-description {
+        font-size: 0.6rem;
+    }
+    
+    #active-powerups-display {
+        top: 10px;
+        right: 10px;
+        max-width: 200px;
+    }
+    
+    .active-powerup {
+        padding: 0.5rem;
+    }
+    
+    .active-powerup-name {
+        font-size: 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #powerup-modal .pixel-border {
+        padding: 1rem;
+        font-size: 0.7rem;
+    }
+    
+    #powerup-cards {
+        gap: 0.75rem;
+    }
+    
+    .powerup-name {
+        font-size: 0.7rem;
+    }
+    
+    .powerup-description {
+        font-size: 0.55rem;
+    }
+}
+
