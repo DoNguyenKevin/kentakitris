@@ -62,7 +62,7 @@
 3. Paste vào editor
 4. Click **Publish**
 
-✅ **Done!** Đọc chi tiết: [`SETUP-NHANH.md`](SETUP-NHANH.md)
+✅ **Done!** Đọc chi tiết: [`SETUP-NHANH.md`](docs/SETUP-NHANH.md)
 
 ### 2. Test & Play
 
@@ -95,17 +95,24 @@ keltris/
 ├── database.rules.json             # Firebase Rules (có comments)
 ├── database.rules.clean.json       # Firebase Rules (copy vào Console)
 │
-├── SETUP-NHANH.md                  # Quick setup (3 bước) ⭐
-├── CHECKLIST.md                    # Step-by-step checklist
-├── REALTIME-DATABASE-SETUP.md      # Setup chi tiết
-├── README-LEADERBOARD.md           # Leaderboard overview
-├── IMPLEMENTATION-SUMMARY.md       # Technical summary
+├── js/                             # JavaScript modules
+│   ├── index.js                    # Main game file (monolithic)
+│   ├── main.js                     # Entry point (modular)
+│   ├── firebase-config.js          # Firebase initialization
+│   ├── game-*.js                   # Game logic modules
+│   └── leaderboard.js              # Leaderboard functionality
 │
-├── FEATURE-NAME-INPUT.md           # Name input technical docs
-├── TEST-NAME-INPUT.md              # Testing guide ⭐
-├── SUMMARY-NAME-INPUT.md           # Feature summary
-├── DEMO-NAME-INPUT.md              # Demo scenarios
-└── QUICK-REF-NAME-INPUT.md         # Quick reference card
+└── docs/                           # Documentation files ⭐
+    ├── SETUP-NHANH.md              # Quick setup (3 bước)
+    ├── CHECKLIST.md                # Step-by-step checklist
+    ├── REALTIME-DATABASE-SETUP.md  # Setup chi tiết
+    ├── README-LEADERBOARD.md       # Leaderboard overview
+    ├── IMPLEMENTATION-SUMMARY.md   # Technical summary
+    ├── FEATURE-NAME-INPUT.md       # Name input technical docs
+    ├── TEST-NAME-INPUT.md          # Testing guide
+    ├── SUMMARY-NAME-INPUT.md       # Feature summary
+    ├── DEMO-NAME-INPUT.md          # Demo scenarios
+    └── QUICK-REF-NAME-INPUT.md     # Quick reference card
 ```
 
 **⭐ = Đọc trước**
@@ -168,7 +175,7 @@ localStorage:
   - lastNameChangeDate: "2025-10-10"
 ```
 
-**Đọc thêm**: [`FEATURE-NAME-INPUT.md`](FEATURE-NAME-INPUT.md)
+**Đọc thêm**: [`FEATURE-NAME-INPUT.md`](docs/FEATURE-NAME-INPUT.md)
 
 ---
 
@@ -240,7 +247,7 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 ```
 
 ### Full Test Suite
-Đọc: [`TEST-NAME-INPUT.md`](TEST-NAME-INPUT.md)
+Đọc: [`TEST-NAME-INPUT.md`](docs/TEST-NAME-INPUT.md)
 
 **Test scenarios:**
 - ✅ First time player
@@ -326,29 +333,29 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 ✅ Force show: document.getElementById('name-modal').classList.remove('hidden')
 ```
 
-**Đọc thêm**: [`CHECKLIST.md`](CHECKLIST.md) - Troubleshooting section
+**Đọc thêm**: [`CHECKLIST.md`](docs/CHECKLIST.md) - Troubleshooting section
 
 ---
 
 ## 📚 Documentation
 
 ### Setup & Deployment
-- [`SETUP-NHANH.md`](SETUP-NHANH.md) - Quick start (3 bước)
-- [`REALTIME-DATABASE-SETUP.md`](REALTIME-DATABASE-SETUP.md) - Chi tiết setup
-- [`CHECKLIST.md`](CHECKLIST.md) - Step-by-step checklist
+- [`SETUP-NHANH.md`](docs/SETUP-NHANH.md) - Quick start (3 bước)
+- [`REALTIME-DATABASE-SETUP.md`](docs/REALTIME-DATABASE-SETUP.md) - Chi tiết setup
+- [`CHECKLIST.md`](docs/CHECKLIST.md) - Step-by-step checklist
 
 ### Features
-- [`README-LEADERBOARD.md`](README-LEADERBOARD.md) - Leaderboard overview
-- [`FEATURE-NAME-INPUT.md`](FEATURE-NAME-INPUT.md) - Name input technical
-- [`SUMMARY-NAME-INPUT.md`](SUMMARY-NAME-INPUT.md) - Feature summary
+- [`README-LEADERBOARD.md`](docs/README-LEADERBOARD.md) - Leaderboard overview
+- [`FEATURE-NAME-INPUT.md`](docs/FEATURE-NAME-INPUT.md) - Name input technical
+- [`SUMMARY-NAME-INPUT.md`](docs/SUMMARY-NAME-INPUT.md) - Feature summary
 
 ### Testing & Demo
-- [`TEST-NAME-INPUT.md`](TEST-NAME-INPUT.md) - Testing guide
-- [`DEMO-NAME-INPUT.md`](DEMO-NAME-INPUT.md) - Demo scenarios
-- [`QUICK-REF-NAME-INPUT.md`](QUICK-REF-NAME-INPUT.md) - Quick reference
+- [`TEST-NAME-INPUT.md`](docs/TEST-NAME-INPUT.md) - Testing guide
+- [`DEMO-NAME-INPUT.md`](docs/DEMO-NAME-INPUT.md) - Demo scenarios
+- [`QUICK-REF-NAME-INPUT.md`](docs/QUICK-REF-NAME-INPUT.md) - Quick reference
 
 ### Technical
-- [`IMPLEMENTATION-SUMMARY.md`](IMPLEMENTATION-SUMMARY.md) - Technical summary
+- [`IMPLEMENTATION-SUMMARY.md`](docs/IMPLEMENTATION-SUMMARY.md) - Technical summary
 - [`database.rules.json`](database.rules.json) - Firebase rules (with comments)
 
 ---
@@ -404,9 +411,9 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 ## 📞 Support
 
 **Issues?** Check documentation:
-1. [`SETUP-NHANH.md`](SETUP-NHANH.md) - Setup problems
-2. [`TEST-NAME-INPUT.md`](TEST-NAME-INPUT.md) - Testing issues
-3. [`CHECKLIST.md`](CHECKLIST.md) - Troubleshooting
+1. [`SETUP-NHANH.md`](docs/SETUP-NHANH.md) - Setup problems
+2. [`TEST-NAME-INPUT.md`](docs/TEST-NAME-INPUT.md) - Testing issues
+3. [`CHECKLIST.md`](docs/CHECKLIST.md) - Troubleshooting
 
 **Still stuck?** Open an issue on GitHub!
 
@@ -434,11 +441,11 @@ firebase deploy --only hosting
 
 ## Quick Links
 
-- [🚀 Quick Setup (3 bước)](SETUP-NHANH.md)
-- [✅ Checklist đầy đủ](CHECKLIST.md)
-- [🧪 Test Guide](TEST-NAME-INPUT.md)
-- [📖 Name Feature Docs](FEATURE-NAME-INPUT.md)
-- [🎬 Demo Scenarios](DEMO-NAME-INPUT.md)
+- [🚀 Quick Setup (3 bước)](docs/SETUP-NHANH.md)
+- [✅ Checklist đầy đủ](docs/CHECKLIST.md)
+- [🧪 Test Guide](docs/TEST-NAME-INPUT.md)
+- [📖 Name Feature Docs](docs/FEATURE-NAME-INPUT.md)
+- [🎬 Demo Scenarios](docs/DEMO-NAME-INPUT.md)
 
 ---
 
