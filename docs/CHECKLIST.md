@@ -40,15 +40,13 @@
 
 ## 🧪 Testing (10 phút)
 
-### Test 1: Tool test riêng
-- [ ] Mở file `test-leaderboard.html` trong browser
-- [ ] Check **Authentication Status** = ✅ Connected
-- [ ] Nhập name: `TEST1`
-- [ ] Nhập score: `1000`
-- [ ] Click **Submit Score**
-- [ ] Check status = ✅ Score submitted
-- [ ] Check **Leaderboard** hiển thị score
-- [ ] Check **Database Structure Preview** có data
+### Test 1: Chơi game
+- [ ] Mở file `index.html` trong browser
+- [ ] Check **User ID display** hiện Player name hoặc ID
+- [ ] Chơi game và đạt một số điểm
+- [ ] Khi game over, nhập tên (nếu chưa có)
+- [ ] Click **SAVE SCORE**
+- [ ] Check **Leaderboard** bên phải hiển thị score của bạn
 
 ### Test 2: Firebase Console
 - [ ] Mở Firebase Console → Realtime Database → Data
@@ -56,8 +54,8 @@
 - [ ] Click vào uid → xem name, score, updatedAt
 - [ ] Values match với test tool
 
-### Test 3: Update score cao hơn
-- [ ] Trong test tool, nhập score: `2000`
+### Test 3: Chơi lại với score cao hơn
+- [ ] Chơi game lại và đạt điểm cao hơn
 - [ ] Click Submit
 - [ ] Check status = 🎉 New high score! 2000 (Previous: 1000)
 - [ ] Leaderboard update tự động

@@ -10,28 +10,19 @@
 4. **Authentication** → Sign-in method → Enable **Anonymous**
 5. **Realtime Database** → Tab **Rules** → Copy từ `database.rules.clean.json` → Publish
 
-### 2. Test Leaderboard
-
-Mở file: **`test-leaderboard.html`**
-
-- ✅ Check authentication status
-- ✅ Submit test scores
-- ✅ Xem leaderboard realtime
-- ✅ Xem raw database structure
-
-### 3. Chạy Game
+### 2. Chạy Game
 
 Mở file: **`index.html`**
 
 - Chơi game → Game over → Score tự động lưu
 - Leaderboard tự động cập nhật
+- Xem leaderboard realtime updates
 
 ## 📁 Files
 
 | File | Mô tả |
 |------|-------|
 | `index.html` | Game chính (đã tích hợp Realtime DB) |
-| `test-leaderboard.html` | Tool test leaderboard độc lập |
 | `database.rules.json` | Security Rules (có comments) |
 | `database.rules.clean.json` | Security Rules (clean, copy vào Firebase) |
 | `REALTIME-DATABASE-SETUP.md` | Hướng dẫn chi tiết đầy đủ |
@@ -133,16 +124,15 @@ await window.saveScore(12345);
 - [ ] Tạo Realtime Database (asia-southeast1)
 - [ ] Enable Anonymous Authentication
 - [ ] Publish Security Rules
-- [ ] Test `test-leaderboard.html`
-- [ ] Test `index.html` (chơi game)
+- [ ] Test `index.html` (chơi game và kiểm tra leaderboard)
 - [ ] Check Firebase Console → Data
 - [ ] (Optional) Enable App Check
 - [ ] Deploy
 
-## 🎉 Demo URLs
+## 🎉 Demo
 
-- Game: `index.html`
-- Test Tool: `test-leaderboard.html`
+- Game chính: `index.html`
+- Phiên bản modular (thay thế): `index-modular.html`
 
 ## 📞 Support
 

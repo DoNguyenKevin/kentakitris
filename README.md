@@ -103,14 +103,6 @@
 
 ### 2. Test & Play
 
-**Test Tool** (khuyên dùng trước):
-```bash
-Mở file: test-leaderboard.html
-```
-- Submit test scores
-- Xem realtime updates
-- Kiểm tra database structure
-
 **Play Game**:
 ```bash
 Mở file: index.html
@@ -118,6 +110,7 @@ Mở file: index.html
 - Chơi game bình thường
 - Game over → Nhập tên → Save score
 - Xem tên và điểm xuất hiện trên leaderboard
+- Kiểm tra Firebase Console để xem dữ liệu trong database
 
 ---
 
@@ -127,13 +120,11 @@ Mở file: index.html
 keltris/
 ├── index.html                      # Game chính ⭐
 ├── index.css                       # Styles (pixel theme)
-├── test-leaderboard.html           # Test tool
 │
 ├── database.rules.json             # Firebase Rules (có comments)
 ├── database.rules.clean.json       # Firebase Rules (copy vào Console)
 │
 ├── js/                             # JavaScript modules
-│   ├── index.js                    # Main game file (monolithic)
 │   ├── main.js                     # Entry point (modular)
 │   ├── firebase-config.js          # Firebase initialization
 │   ├── game-*.js                   # Game logic modules
