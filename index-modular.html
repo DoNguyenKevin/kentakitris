@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Tetris</title>
+    <!-- Load Tailwind CSS for utility classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load custom CSS -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body class="selection:bg-yellow-400 selection:text-black">
+
+    <div class="flex flex-col md:flex-row max-w-7xl w-full justify-center">
+
+        <!-- Game Board Container -->
+        <div class="board-container pixel-border p-1">
+            <div id="game-board">
+                <!-- Board blocks will be generated here -->
+            </div>
+        </div>
+
+        <!-- Info Panel (Score, Next, Leaderboard) -->
+        <div class="info-panel flex flex-col gap-6 w-full md:w-64">
+            
+            <div id="status-message" class="text-xl text-center text-yellow-400 min-h-[3rem] p-2">
+                Press START or SPACE to begin!
+            </div>
+
+            <!-- User ID Display -->
+            <div id="user-id-display" class="text-xs text-center text-gray-500">
+                Authenticating...
+            </div>
+
+            <!-- Game Stats -->
+            <div class="pixel-border p-4">
+                <h2 class="text-yellow-400 font-bold mb-2">STATS</h2>
+                <p class="text-white">Score: <span id="score-display" class="text-yellow-400 font-bold">0</span></p>
+                <p class="text-white">Level: <span id="level-display" class="text-yellow-400 font-bold">1</span></p>
+            </div>
+
+            <!-- Next Piece Display -->
+            <div class="pixel-border p-4">
+                <h2 class="text-yellow-400 font-bold mb-2">NEXT</h2>
+                <div id="next-piece-display" class="grid grid-cols-4 grid-rows-4 w-32 h-32 mx-auto border-2 border-gray-800">
+                    <!-- Next piece preview will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div id="leaderboard-container" class="pixel-border p-4">
+                <h2 class="text-yellow-400 font-bold mb-2">LEADERBOARD</h2>
+                <div id="leaderboard-list" class="space-y-1 max-h-64 overflow-y-auto">
+                    <p class="text-gray-400 text-sm">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <button id="start-button" class="touch-button text-xl text-black bg-green-500 hover:bg-green-600 active:bg-green-700 w-full">
+                START
+            </button>
+            <button id="pause-button" class="touch-button text-xl text-black bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 w-full hidden">
+                PAUSE
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Touch Controls -->
+    <div id="touch-controls" class="md:hidden flex flex-col w-full max-w-xs mx-auto gap-2">
+        <div class="flex justify-center gap-2">
+            <button data-action="rotate" class="touch-button w-20 h-16 text-2xl">↻</button>
+        </div>
+        <div class="flex justify-between gap-2">
+            <button data-action="left" class="touch-button w-20 h-16 text-2xl">←</button>
+            <button data-action="down" class="touch-button flex-grow h-16 text-2xl">↓</button>
+            <button data-action="right" class="touch-button w-20 h-16 text-2xl">→</button>
+        </div>
+        <button data-action="hard-drop" class="touch-button w-full h-12 text-sm bg-blue-500 hover:bg-blue-600 active:bg-blue-700">HARD DROP</button>
+    </div>
+
+    <!-- Load the main game module -->
+    <script type="module" src="js/main.js"></script>
+
+</body>
+</html>
