@@ -1,3 +1,10 @@
+// js/game-logic.js
+// ======================================================
+// ✅ File này chứa LOGIC chính của game
+// Logic = các quy tắc, cách game hoạt động
+// Ví dụ: Di chuyển mảnh, xoay, xóa hàng, tính điểm
+// ======================================================
+
 import { BOARD_HEIGHT, BOARD_WIDTH, SCORE_PER_LINE, LINES_PER_LEVEL } from './game-constants.js';
 import { 
     board, 
@@ -17,21 +24,40 @@ import { drawBoard, createScoreParticles, flashClearedLines } from './game-board
 import { restartDropInterval } from './game-controls.js';
 
 /**
- * Moves the current piece in a given direction.
- * @param {number} dx - Change in X (column).
- * @param {number} dy - Change in Y (row).
- * @returns {boolean} True if movement succeeded, false otherwise.
+ * ✅ Di chuyển mảnh theo hướng cho trước
+ * 
+ * Mục tiêu: Thay đổi vị trí của mảnh (trái/phải/xuống)
+ * 
+ * Cách hoạt động:
+ * 1. Tạo bản sao mảnh với vị trí mới (x + dx, y + dy)
+ * 2. Kiểm tra va chạm
+ * 3. Nếu không va chạm → cập nhật vị trí và vẽ lại board
+ * 4. Nếu va chạm → không di chuyển, trả về false
+ * 
+ * Ví dụ:
+ * - movePiece(-1, 0) → di chuyển TRÁI
+ * - movePiece(1, 0)  → di chuyển PHẢI
+ * - movePiece(0, 1)  → di chuyển XUỐNG
+ * 
+ * Try it: Thêm console.log('Di chuyển:', dx, dy) để theo dõi
+ * 
+ * @param {number} dx - Thay đổi cột (ngang): -1=trái, 1=phải, 0=không đổi
+ * @param {number} dy - Thay đổi hàng (dọc): 1=xuống, 0=không đổi
+ * @returns {boolean} true nếu di chuyển thành công, false nếu bị chặn
  */
 export function movePiece(dx, dy) {
-    if (!currentPiece) return false;
+    if (!currentPiece) return false; // Chưa có mảnh thì không làm gì
+    
+    // Tạo mảnh mới với vị trí dịch chuyển
     const newPiece = { ...currentPiece, x: currentPiece.x + dx, y: currentPiece.y + dy };
 
+    // Kiểm tra xem có va chạm không
     if (!checkCollision(newPiece)) {
-        setCurrentPiece(newPiece);
-        drawBoard();
-        return true;
+        setCurrentPiece(newPiece);  // Cập nhật vị trí
+        drawBoard();                 // Vẽ lại màn hình
+        return true;                 // Thành công!
     }
-    return false;
+    return false; // Va chạm, không di chuyển được
 }
 
 /**
