@@ -243,17 +243,23 @@ localStorage:
 ### Frontend
 - **HTML5** - Structure
 - **CSS3** - Pixel art styling, animations
-- **JavaScript (ES6+)** - Game logic
-- **Tailwind CSS** - Utility classes
+- **JavaScript (ES6+)** - Game logic, ES6 modules
+- **Tailwind CSS** - Utility classes (via CDN)
+- **Vite** - Build tool and dev server
 
 ### Backend
 - **Firebase Realtime Database** - Leaderboard data
 - **Firebase Authentication** - Anonymous auth
 - **Firebase Security Rules** - Access control
 
+### Build & Deployment
+- **Vite 5.x** - Fast build tool with HMR
+- **Vercel** - Recommended deployment platform
+- **Firebase Hosting** - Alternative deployment option
+
 ### Libraries
-- None! Pure vanilla JS (no dependencies)
-- Firebase SDK via CDN
+- Minimal dependencies (Vite dev dependency only)
+- Firebase SDK via CDN (runtime)
 
 ---
 
@@ -447,17 +453,56 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 
 ---
 
-## 🎮 Live Demo
+## 🎮 Development & Deployment
 
-```
-Local: file:///path/to/index.html
+### Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server with Vite
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-**Ready to deploy?**
+### Deploy to Vercel
+
+**Option 1: Using Vercel CLI**
+```bash
+# Install Vercel CLI globally
+npm install -g vercel
+
+# Deploy
+vercel
+
+# Deploy to production
+vercel --prod
+```
+
+**Option 2: Via GitHub Integration**
+1. Push your code to GitHub
+2. Go to [vercel.com](https://vercel.com)
+3. Import your repository
+4. Vercel will automatically detect Vite configuration
+5. Click "Deploy"
+
+**Option 3: Firebase Hosting (Alternative)**
 ```bash
 firebase init hosting
 firebase deploy --only hosting
 ```
+
+### Environment Variables (Vercel)
+
+Set these in your Vercel project settings:
+- `VITE_FIREBASE_CONFIG` - Your Firebase configuration JSON
+- Other Firebase-related variables as needed
 
 ---
 
