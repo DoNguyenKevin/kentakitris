@@ -61,31 +61,66 @@ export function movePiece(dx, dy) {
 }
 
 /**
- * Hard drops the current piece to the bottom.
+ * ✅ Thả mảnh xuống đáy ngay lập tức (Hard Drop)
+ * 
+ * Mục tiêu: Thay vì chờ mảnh rơi từ từ, thả luôn xuống đáy
+ * 
+ * Cách hoạt động:
+ * 1. Di chuyển mảnh xuống (0, 1) liên tục
+ * 2. Đếm số lần di chuyển thành công
+ * 3. Dừng khi không di chuyển được nữa (chạm đáy hoặc mảnh khác)
+ * 
+ * Try it: Trong game, nhấn phím Space để hard drop!
+ * 
+ * @returns {boolean} true nếu đã thả xuống, false nếu chưa có mảnh
  */
 export function hardDrop() {
     if (!currentPiece) return;
-    let drops = 0;
+    let drops = 0; // Đếm số bước rơi
+    
+    // Rơi liên tục cho đến khi không rơi được nữa
     while (movePiece(0, 1)) {
         drops++;
     }
-    // Lock the piece immediately after hard drop
+    
+    // Báo hiệu cần khóa mảnh ngay
     if (drops > 0) {
-        return true; // Signal that piece should be locked
+        return true; // Đã thả xuống, cần khóa mảnh
     }
     return false;
 }
 
 /**
- * Rotates the current piece 90 degrees clockwise.
+ * ✅ Xoay mảnh 90 độ theo chiều kim đồng hồ
+ * 
+ * Mục tiêu: Thay đổi hướng của mảnh (ngang sang dọc hoặc ngược lại)
+ * 
+ * Cách hoạt động:
+ * 1. Tạo mảnh đã xoay bằng rotatePieceShape()
+ * 2. Kiểm tra va chạm
+ * 3. Nếu va chạm, thử "đẩy" mảnh sang trái/phải/lên/xuống (kick-testing)
+ * 4. Nếu tìm được vị trí an toàn → xoay thành công
+ * 
+ * Kick-testing: Kỹ thuật trong Tetris chính thức
+ * - Thử 5 vị trí: [0,0], [-1,0], [1,0], [0,-1], [0,1]
+ * - Giúp xoay mảnh khi sát tường hoặc gần mảnh khác
+ * 
+ * Try it: Trong game, nhấn phím Up hoặc W để xoay!
  */
 export function rotatePiece() {
     if (!currentPiece) return;
     
     const rotatedPiece = rotatePieceShape(currentPiece);
 
-    // Kick-testing: Try to move the piece slightly if the rotation causes a collision
-    const kicks = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]];
+    // Kick-testing: Thử dịch chuyển nhẹ nếu xoay bị va chạm
+    const kicks = [
+        [0, 0],   // Giữ nguyên vị trí
+        [-1, 0],  // Đẩy sang trái 1 ô
+        [1, 0],   // Đẩy sang phải 1 ô
+        [0, -1],  // Đẩy lên 1 ô
+        [0, 1]    // Đẩy xuống 1 ô
+    ];
+    
     for (const [kx, ky] of kicks) {
         const kickedPiece = { ...rotatedPiece, x: rotatedPiece.x + kx, y: rotatedPiece.y + ky };
         if (!checkCollision(kickedPiece)) {
