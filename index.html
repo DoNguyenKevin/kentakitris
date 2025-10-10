@@ -139,7 +139,81 @@
         <button data-action="hard-drop" class="touch-button w-full h-12 text-sm bg-blue-500 hover:bg-blue-600 active:bg-blue-700">HARD DROP</button>
     </div>
 
+    <!-- Name Input Modal (hiện sau khi Game Over) -->
+    <div id="name-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-900 border-4 border-yellow-500 p-8 max-w-md w-full mx-4 pixel-border">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4 text-center">🎮 GAME OVER!</h2>
+            <div class="text-center mb-6">
+                <p class="text-white text-xl mb-2">Your Score:</p>
+                <p id="modal-score" class="text-yellow-300 text-4xl font-bold">0</p>
+            </div>
+            
+            <div id="name-input-section" class="mb-6">
+                <label class="block text-yellow-400 text-sm font-bold mb-2">Enter Your Name:</label>
+                <input 
+                    id="player-name-input" 
+                    type="text" 
+                    maxlength="20" 
+                    placeholder="Your name (max 20 chars)"
+                    class="w-full p-3 bg-gray-800 border-2 border-gray-600 text-white text-lg focus:border-yellow-500 focus:outline-none"
+                />
+                <p class="text-gray-400 text-xs mt-2">* Chỉ được đổi tên 1 lần/ngày</p>
+            </div>
+
+            <div id="name-locked-section" class="mb-6 hidden">
+                <p class="text-gray-400 text-sm mb-2">Playing as:</p>
+                <p id="current-player-name" class="text-yellow-300 text-xl font-bold"></p>
+                <p class="text-gray-500 text-xs mt-2">🔒 Bạn đã đặt tên hôm nay. Quay lại vào ngày mai để đổi tên.</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="save-score-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 text-lg">
+                    💾 SAVE SCORE
+                </button>
+                <button id="skip-save-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 text-lg">
+                    SKIP
+                </button>
+            </div>
+            
+            <p id="save-status" class="text-sm text-center mt-4 min-h-[20px]"></p>
+        </div>
+    </div>
+
     <script type="module">
+        // --- HELPER FUNCTIONS FOR NAME MANAGEMENT ---
+        
+        /**
+         * Lấy ngày hiện tại dạng YYYY-MM-DD
+         */
+        function getTodayString() {
+            const now = new Date();
+            return now.toISOString().split('T')[0];
+        }
+
+        /**
+         * Kiểm tra xem user đã đặt tên hôm nay chưa
+         */
+        function canChangeNameToday() {
+            const lastNameChangeDate = localStorage.getItem('lastNameChangeDate');
+            const today = getTodayString();
+            return lastNameChangeDate !== today;
+        }
+
+        /**
+         * Lưu tên người chơi và ghi nhận ngày đổi tên
+         */
+        function savePlayerName(name) {
+            localStorage.setItem('playerName', name);
+            localStorage.setItem('lastNameChangeDate', getTodayString());
+        }
+
+        /**
+         * Lấy tên người chơi hiện tại
+         */
+        function getPlayerName() {
+            return localStorage.getItem('playerName') || null;
+        }
+
         // --- GAME CONSTANTS ---
         const BOARD_WIDTH = 10;
         const BOARD_HEIGHT = 20;
@@ -199,6 +273,17 @@
         const pauseButton = document.getElementById('pause-button');
         const touchControls = document.getElementById('touch-controls');
         const leaderboardListEl = document.getElementById('leaderboard-list');
+        
+        // Modal elements
+        const nameModal = document.getElementById('name-modal');
+        const modalScore = document.getElementById('modal-score');
+        const playerNameInput = document.getElementById('player-name-input');
+        const nameInputSection = document.getElementById('name-input-section');
+        const nameLockedSection = document.getElementById('name-locked-section');
+        const currentPlayerNameEl = document.getElementById('current-player-name');
+        const saveScoreBtn = document.getElementById('save-score-btn');
+        const skipSaveBtn = document.getElementById('skip-save-btn');
+        const saveStatus = document.getElementById('save-status');
 
         // --- FIREBASE/LEADERBOARD FUNCTIONS (REALTIME DATABASE) ---
 
@@ -209,13 +294,15 @@
         window.saveScore = async (finalScore) => {
             if (!window.db || !window.userId) {
                 console.log("Cannot save score: Firebase or User ID not initialized.");
-                return;
+                saveStatus.textContent = '❌ Firebase not initialized';
+                saveStatus.className = 'text-sm text-center mt-4 text-red-400';
+                return false;
             }
 
             const { ref, set, get } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
             
             // Get player name from localStorage or use short ID
-            const playerName = localStorage.getItem('playerName') || window.userId.substring(0, 8);
+            const playerName = getPlayerName() || window.userId.substring(0, 8);
             const userRef = ref(window.db, `leaderboards/global/${window.userId}`);
 
             try {
@@ -232,15 +319,22 @@
                     });
                     console.log(`Score saved: ${finalScore} (Previous: ${existingData?.score || 0})`);
                     
-                    // Show success message
-                    if (existingData && finalScore > existingData.score) {
-                        alert(`🎉 New High Score! ${finalScore} (Previous: ${existingData.score})`);
-                    }
+                    saveStatus.textContent = existingData 
+                        ? `🎉 New High Score! ${finalScore} (Previous: ${existingData.score})`
+                        : `✅ Score saved: ${finalScore}`;
+                    saveStatus.className = 'text-sm text-center mt-4 text-green-400';
+                    return true;
                 } else {
                     console.log(`Score ${finalScore} not saved. Current best: ${existingData.score}`);
+                    saveStatus.textContent = `⚠️ Your best score is still ${existingData.score}`;
+                    saveStatus.className = 'text-sm text-center mt-4 text-yellow-400';
+                    return false;
                 }
             } catch (error) {
                 console.error("Error saving score to Realtime Database:", error);
+                saveStatus.textContent = `❌ Error: ${error.message}`;
+                saveStatus.className = 'text-sm text-center mt-4 text-red-400';
+                return false;
             }
         };
 
@@ -682,12 +776,46 @@
             boardEl.style.opacity = '0.5';
             setTimeout(() => { boardEl.style.opacity = '1'; }, 100);
             
-            // Save the final score
-            window.saveScore(score);
+            // Show name input modal instead of auto-saving
+            showNameModal(score);
 
             // Remove input handlers until restart
             document.removeEventListener('keydown', handleKeyDown);
             touchControls.removeEventListener('click', handleTouchControls);
+        }
+
+        /**
+         * Shows the name input modal after game over
+         */
+        function showNameModal(finalScore) {
+            modalScore.textContent = finalScore;
+            saveStatus.textContent = '';
+            
+            const currentName = getPlayerName();
+            const canChangeName = canChangeNameToday();
+
+            if (canChangeName) {
+                // Cho phép nhập tên
+                nameInputSection.classList.remove('hidden');
+                nameLockedSection.classList.add('hidden');
+                playerNameInput.value = currentName || '';
+                playerNameInput.disabled = false;
+            } else {
+                // Đã đặt tên hôm nay, chỉ hiển thị
+                nameInputSection.classList.add('hidden');
+                nameLockedSection.classList.remove('hidden');
+                currentPlayerNameEl.textContent = currentName || 'Anonymous';
+            }
+
+            // Show modal
+            nameModal.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the name modal
+         */
+        function hideNameModal() {
+            nameModal.classList.add('hidden');
         }
 
         // --- INPUT HANDLING ---
@@ -761,6 +889,56 @@
         
         startButton.addEventListener('click', startGame);
         pauseButton.addEventListener('click', pauseGame);
+        
+        // Modal button handlers
+        saveScoreBtn.addEventListener('click', async () => {
+            // Lưu tên nếu có thể thay đổi
+            if (canChangeNameToday()) {
+                const newName = playerNameInput.value.trim();
+                if (newName && newName.length > 0 && newName.length <= 20) {
+                    savePlayerName(newName);
+                    console.log(`Player name saved: ${newName}`);
+                    
+                    // Update user display
+                    const displayName = newName;
+                    document.getElementById('user-id-display').textContent = `Player: ${displayName}`;
+                } else if (newName.length > 20) {
+                    saveStatus.textContent = '❌ Name too long (max 20 characters)';
+                    saveStatus.className = 'text-sm text-center mt-4 text-red-400';
+                    return;
+                }
+            }
+
+            // Disable button while saving
+            saveScoreBtn.disabled = true;
+            saveStatus.textContent = '⏳ Saving...';
+            saveStatus.className = 'text-sm text-center mt-4 text-yellow-400';
+
+            // Save score
+            const finalScore = parseInt(modalScore.textContent);
+            const saved = await window.saveScore(finalScore);
+
+            // Re-enable button
+            saveScoreBtn.disabled = false;
+
+            // Close modal after 2 seconds if successful
+            if (saved) {
+                setTimeout(() => {
+                    hideNameModal();
+                }, 2000);
+            }
+        });
+
+        skipSaveBtn.addEventListener('click', () => {
+            hideNameModal();
+        });
+
+        // Close modal when clicking outside
+        nameModal.addEventListener('click', (e) => {
+            if (e.target === nameModal) {
+                hideNameModal();
+            }
+        });
         
         // Initial setup for the board display (empty)
         createBoard();

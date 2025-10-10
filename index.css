@@ -362,3 +362,86 @@ body {
     }
 }
 
+/* Modal Styles */
+#name-modal {
+    z-index: 9999;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+#name-modal .pixel-border {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+#player-name-input {
+    font-family: 'Press Start 2P', monospace;
+}
+
+#player-name-input:focus {
+    border-color: #ffd60a;
+    box-shadow: 0 0 0 2px rgba(255, 214, 10, 0.3);
+}
+
+#save-score-btn,
+#skip-save-btn {
+    font-family: 'Press Start 2P', monospace;
+    border: 3px solid #000;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+#save-score-btn:hover:not(:disabled),
+#skip-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 #000;
+}
+
+#save-score-btn:active:not(:disabled),
+#skip-save-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 0 0 #000;
+}
+
+#save-score-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive modal */
+@media (max-width: 640px) {
+    #name-modal .pixel-border {
+        font-size: 0.7rem;
+    }
+    
+    #modal-score {
+        font-size: 2rem !important;
+    }
+    
+    #player-name-input {
+        font-size: 0.8rem;
+    }
+    
+    #save-score-btn,
+    #skip-save-btn {
+        font-size: 0.7rem;
+        padding: 0.6rem;
+    }
+}
