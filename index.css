@@ -9,9 +9,10 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 20px;
+    padding: 10px;
     overflow-x: hidden;
     box-sizing: border-box;
+    margin: 0;
 }
 
 /* Make sure all children inherit box-sizing */
@@ -31,10 +32,37 @@ body {
 }
 
 .board-container {
-    width: min(320px, 45vw);
-    height: min(640px, 90vh);
-    margin-right: 24px;
+    width: min(320px, 40vw, calc(100vh - 40px) / 2);
+    height: min(640px, 80vh, calc(100vh - 40px));
+    margin-right: 20px;
     position: relative;
+    flex-shrink: 0;
+}
+
+.info-panel {
+    max-width: min(300px, 30vw);
+    flex-shrink: 1;
+}
+
+/* Responsive text sizing */
+#status-message {
+    font-size: clamp(0.75rem, 1.8vw, 1.25rem);
+}
+
+#score-display, #level-display {
+    font-size: clamp(1rem, 2vw, 1.5rem);
+}
+
+.pixel-border h2 {
+    font-size: clamp(0.75rem, 1.5vw, 1rem);
+}
+
+#leaderboard-list {
+    font-size: clamp(0.6rem, 1.2vw, 0.85rem);
+}
+
+#user-id-display {
+    font-size: clamp(0.55rem, 1vw, 0.75rem);
 }
 
 #game-board {
@@ -70,12 +98,13 @@ body {
 .touch-button {
     background-color: #4a4e69;
     color: white;
-    padding: 1rem;
+    padding: clamp(0.5rem, 2vw, 1rem);
     border: 3px solid #f9f9f9;
     box-shadow: 
         -3px -3px 0px 0px #1a1a2e, 
         3px 3px 0px 0px #bbd0ff;
     transition: all 0.05s ease;
+    font-size: clamp(0.7rem, 1.5vw, 1rem);
 }
 
 .touch-button:active {
@@ -89,7 +118,7 @@ body {
 .score-particle {
     position: absolute;
     pointer-events: none;
-    font-size: 1.5rem;
+    font-size: clamp(0.85rem, 2vw, 1.5rem);
     font-weight: bold;
     color: #ffe100;
     text-shadow: 
@@ -150,65 +179,141 @@ body {
     body {
         flex-direction: column;
         align-items: center;
-        padding: 10px;
+        padding: 5px;
     }
     .board-container {
         margin-right: 0;
-        margin-bottom: 20px;
-        width: min(90vw, 350px);
-        height: min(90vh, 700px);
+        margin-bottom: 15px;
+        width: min(95vw, 400px);
+        height: min(85vh, calc(95vw * 2), 800px);
     }
     .info-panel {
         width: 100%;
-        max-width: 350px;
+        max-width: min(95vw, 400px);
     }
     #touch-controls {
-        margin-top: 20px;
+        margin-top: 15px;
+        width: 100%;
+        max-width: min(95vw, 400px);
     }
     .score-particle {
         font-size: 1rem;
     }
+    .pixel-border {
+        border: 3px solid #f9f9f9;
+        padding: 8px;
+    }
 }
 
-/* Larger screens - optimize for better viewing */
-@media (min-width: 769px) and (max-width: 1200px) {
+/* Small mobile devices */
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
     .board-container {
-        width: min(400px, 50vw);
-        height: min(800px, 85vh);
+        width: min(95vw, 320px);
+        height: min(80vh, calc(95vw * 2), 640px);
+    }
+    .info-panel {
+        max-width: 95vw;
+        gap: 12px;
+    }
+    .touch-button {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    .score-particle {
+        font-size: 0.85rem;
+    }
+    #status-message {
+        font-size: 0.75rem;
+    }
+}
+
+/* Medium tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .board-container {
+        width: min(380px, 45vw);
+        height: min(760px, 85vh);
+    }
+    .info-panel {
+        max-width: min(320px, 35vw);
+    }
+}
+
+/* Large tablets and desktops */
+@media (min-width: 1025px) and (max-width: 1440px) {
+    .board-container {
+        width: min(420px, 40vw);
+        height: min(840px, 85vh);
+    }
+    .info-panel {
+        max-width: min(340px, 30vw);
     }
 }
 
 /* Extra large screens */
-@media (min-width: 1201px) {
+@media (min-width: 1441px) {
     .board-container {
-        width: min(480px, 45vw);
-        height: min(960px, 90vh);
+        width: min(500px, 40vw);
+        height: min(1000px, 85vh);
+    }
+    .info-panel {
+        max-width: min(380px, 28vw);
     }
 }
 
 /* Portrait orientation optimization */
-@media (orientation: portrait) {
+@media (orientation: portrait) and (min-width: 481px) {
     body {
         flex-direction: column;
     }
     .board-container {
         margin-right: 0;
-        margin-bottom: 20px;
-        width: min(90vw, 400px);
-        height: min(70vh, 800px);
+        margin-bottom: 15px;
+        width: min(85vw, 450px);
+        height: min(75vh, calc(85vw * 2), 900px);
+    }
+    .info-panel {
+        max-width: 85vw;
     }
 }
 
-/* Landscape orientation optimization */
-@media (orientation: landscape) and (max-height: 600px) {
+/* Landscape orientation optimization for short screens */
+@media (orientation: landscape) and (max-height: 700px) {
     body {
-        padding: 10px;
+        padding: 5px;
         align-items: flex-start;
+        flex-direction: row;
     }
     .board-container {
         width: auto;
-        height: 85vh;
+        height: min(90vh, 650px);
         aspect-ratio: 1 / 2;
+        margin-right: 15px;
+    }
+    .info-panel {
+        max-width: min(40vw, 280px);
+        overflow-y: auto;
+        max-height: 90vh;
+    }
+    #touch-controls {
+        display: none !important; /* Hide touch controls in landscape on short screens */
+    }
+}
+
+/* Landscape for very short screens */
+@media (orientation: landscape) and (max-height: 500px) {
+    .board-container {
+        height: 85vh;
+    }
+    .info-panel {
+        font-size: 0.85rem;
+        gap: 8px;
+    }
+    .pixel-border {
+        padding: 6px;
+        border: 2px solid #f9f9f9;
     }
 }
 
@@ -221,3 +326,39 @@ body {
 .current-piece-cell {
     visibility: visible !important;
 }
+
+/* Ultra-wide screens (21:9 and wider) */
+@media (min-aspect-ratio: 21/9) {
+    body {
+        max-width: 1800px;
+        margin: 0 auto;
+    }
+}
+
+/* Very small screens (watches, tiny devices) */
+@media (max-width: 360px) {
+    body {
+        font-size: 0.8rem;
+    }
+    .board-container {
+        width: 98vw;
+        height: min(75vh, calc(98vw * 2));
+    }
+    .pixel-border {
+        border: 2px solid #f9f9f9;
+        padding: 4px;
+    }
+    .touch-button {
+        padding: 0.5rem;
+        font-size: 0.7rem;
+        border: 2px solid #f9f9f9;
+    }
+}
+
+/* Ensure proper aspect ratio maintenance */
+@supports (aspect-ratio: 1 / 2) {
+    .board-container {
+        aspect-ratio: 1 / 2;
+    }
+}
+
