@@ -1,6 +1,11 @@
 /* Retro Pixel Font (using monospace as a fallback) */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+/* Tailwind CSS Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
     font-family: 'Press Start 2P', monospace;
     background-color: #1a1a2e; /* Deep purple background */
