@@ -103,14 +103,6 @@
 
 ### 2. Test & Play
 
-**Test Tool** (khuyên dùng trước):
-```bash
-Mở file: test-leaderboard.html
-```
-- Submit test scores
-- Xem realtime updates
-- Kiểm tra database structure
-
 **Play Game**:
 ```bash
 Mở file: index.html
@@ -118,6 +110,7 @@ Mở file: index.html
 - Chơi game bình thường
 - Game over → Nhập tên → Save score
 - Xem tên và điểm xuất hiện trên leaderboard
+- Kiểm tra Firebase Console để xem dữ liệu trong database
 
 ---
 

@@ -124,8 +124,7 @@ await window.saveScore(12345);
 - [ ] Tạo Realtime Database (asia-southeast1)
 - [ ] Enable Anonymous Authentication
 - [ ] Publish Security Rules
-- [ ] Test `test-leaderboard.html`
-- [ ] Test `index.html` (chơi game)
+- [ ] Test `index.html` (chơi game và kiểm tra leaderboard)
 - [ ] Check Firebase Console → Data
 - [ ] (Optional) Enable App Check
 - [ ] Deploy
