@@ -1,0 +1,34 @@
+{
+  "rules": {
+    "leaderboards": {
+      "global": {
+        "$uid": {
+          // Everyone can read all scores (for leaderboard display)
+          ".read": true,
+          
+          // Only authenticated user can write to their own UID
+          ".write": "auth != null && auth.uid === $uid",
+          
+          // Validate data structure and enforce score can only increase
+          ".validate": "newData.hasChildren(['name', 'score', 'updatedAt']) && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 20 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('updatedAt').isNumber() && (!data.exists() || newData.child('score').val() >= data.child('score').val())",
+          
+          // Validate individual fields
+          "name": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
+          },
+          "score": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          
+          // Reject any other fields
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    }
+  }
+}

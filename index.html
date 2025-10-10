@@ -8,69 +8,67 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load custom CSS -->
     <link rel="stylesheet" href="index.css">
-    <!-- Load Firebase SDKs -->
+    <!-- Load Firebase SDKs - Realtime Database -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, limit, orderBy, getDocs, updateDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getDatabase, ref, set, query, orderByChild, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-        // Set Firebase log level to debug for development purposes (can be removed later)
-        setLogLevel('Debug');
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB20BwcVcwBBLQc8p-hPH6v2dd1Ag8uvgk",
+            authDomain: "kentakitris.firebaseapp.com",
+            databaseURL: "https://kentakitris-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kentakitris",
+            storageBucket: "kentakitris.firebasestorage.app",
+            messagingSenderId: "813070706725",
+            appId: "1:813070706725:web:50bdddc7bdfa897ab877cc",
+            measurementId: "G-DMJSY5GMQS"
+        };
 
-        // Global variables provided by the environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        
+        // Global variables
+        let userId = null;
+        let playerName = localStorage.getItem('playerName') || null;
 
-        let app, db, auth, userId = null;
+        // Attach to window for game logic access
+        window.db = db;
+        window.auth = auth;
 
-        if (Object.keys(firebaseConfig).length > 0) {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            window.db = db; // Attach to window for game logic access
-            window.auth = auth; // Attach to window for game logic access
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                } else {
-                    // Sign in anonymously if no custom token is provided or if sign-in failed
-                    try {
-                        await signInAnonymously(auth);
-                        userId = auth.currentUser.uid;
-                    } catch (error) {
-                        console.error("Anonymous sign-in failed:", error);
-                    }
-                }
-                window.userId = userId; // Attach to window for game logic access
-                document.getElementById('user-id-display').textContent = userId ? `Player ID: ${userId}` : 'Authenticating...';
+        // Authentication
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                window.userId = userId;
                 
-                // Once authenticated, start listening to the leaderboard
-                if (userId && window.loadLeaderboard) {
+                // Display user info
+                const shortId = userId.substring(0, 8);
+                const displayName = playerName || shortId;
+                document.getElementById('user-id-display').textContent = `Player: ${displayName}`;
+                
+                // Start listening to leaderboard once authenticated
+                if (window.loadLeaderboard) {
                     window.loadLeaderboard();
                 }
-            });
-
-            // Try to sign in with custom token if available
-            if (initialAuthToken) {
-                signInWithCustomToken(auth, initialAuthToken).catch(error => {
-                    console.error("Custom sign-in failed, proceeding with anonymous sign-in.", error);
-                    signInAnonymously(auth);
-                });
             } else {
-                signInAnonymously(auth);
+                // Sign in anonymously
+                try {
+                    await signInAnonymously(auth);
+                } catch (error) {
+                    console.error("Anonymous sign-in failed:", error);
+                    document.getElementById('user-id-display').textContent = 'Auth failed';
+                }
             }
-        } else {
-             // Fallback if Firebase config is missing
-             console.warn("Firebase configuration is missing. Leaderboard functionality is disabled.");
-             document.getElementById('leaderboard-container').innerHTML = '<p class="text-red-400 text-sm">Leaderboard disabled (Missing Firebase config).</p>';
-             window.db = null;
-             window.auth = null;
-             window.userId = crypto.randomUUID(); // Mock user ID for local use
-             document.getElementById('user-id-display').textContent = `Mock ID: ${window.userId}`;
-        }
+        });
+
+        // Start authentication
+        signInAnonymously(auth).catch(error => {
+            console.error("Initial sign-in failed:", error);
+        });
     </script>
 </head>
 <body class="selection:bg-yellow-400 selection:text-black">
@@ -141,7 +139,81 @@
         <button data-action="hard-drop" class="touch-button w-full h-12 text-sm bg-blue-500 hover:bg-blue-600 active:bg-blue-700">HARD DROP</button>
     </div>
 
+    <!-- Name Input Modal (hiện sau khi Game Over) -->
+    <div id="name-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-900 border-4 border-yellow-500 p-8 max-w-md w-full mx-4 pixel-border">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4 text-center">🎮 GAME OVER!</h2>
+            <div class="text-center mb-6">
+                <p class="text-white text-xl mb-2">Your Score:</p>
+                <p id="modal-score" class="text-yellow-300 text-4xl font-bold">0</p>
+            </div>
+            
+            <div id="name-input-section" class="mb-6">
+                <label class="block text-yellow-400 text-sm font-bold mb-2">Enter Your Name:</label>
+                <input 
+                    id="player-name-input" 
+                    type="text" 
+                    maxlength="20" 
+                    placeholder="Your name (max 20 chars)"
+                    class="w-full p-3 bg-gray-800 border-2 border-gray-600 text-white text-lg focus:border-yellow-500 focus:outline-none"
+                />
+                <p class="text-gray-400 text-xs mt-2">* Chỉ được đổi tên 1 lần/ngày</p>
+            </div>
+
+            <div id="name-locked-section" class="mb-6 hidden">
+                <p class="text-gray-400 text-sm mb-2">Playing as:</p>
+                <p id="current-player-name" class="text-yellow-300 text-xl font-bold"></p>
+                <p class="text-gray-500 text-xs mt-2">🔒 Bạn đã đặt tên hôm nay. Quay lại vào ngày mai để đổi tên.</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="save-score-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 text-lg">
+                    💾 SAVE SCORE
+                </button>
+                <button id="skip-save-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 text-lg">
+                    SKIP
+                </button>
+            </div>
+            
+            <p id="save-status" class="text-sm text-center mt-4 min-h-[20px]"></p>
+        </div>
+    </div>
+
     <script type="module">
+        // --- HELPER FUNCTIONS FOR NAME MANAGEMENT ---
+        
+        /**
+         * Lấy ngày hiện tại dạng YYYY-MM-DD
+         */
+        function getTodayString() {
+            const now = new Date();
+            return now.toISOString().split('T')[0];
+        }
+
+        /**
+         * Kiểm tra xem user đã đặt tên hôm nay chưa
+         */
+        function canChangeNameToday() {
+            const lastNameChangeDate = localStorage.getItem('lastNameChangeDate');
+            const today = getTodayString();
+            return lastNameChangeDate !== today;
+        }
+
+        /**
+         * Lưu tên người chơi và ghi nhận ngày đổi tên
+         */
+        function savePlayerName(name) {
+            localStorage.setItem('playerName', name);
+            localStorage.setItem('lastNameChangeDate', getTodayString());
+        }
+
+        /**
+         * Lấy tên người chơi hiện tại
+         */
+        function getPlayerName() {
+            return localStorage.getItem('playerName') || null;
+        }
+
         // --- GAME CONSTANTS ---
         const BOARD_WIDTH = 10;
         const BOARD_HEIGHT = 20;
@@ -201,85 +273,125 @@
         const pauseButton = document.getElementById('pause-button');
         const touchControls = document.getElementById('touch-controls');
         const leaderboardListEl = document.getElementById('leaderboard-list');
+        
+        // Modal elements
+        const nameModal = document.getElementById('name-modal');
+        const modalScore = document.getElementById('modal-score');
+        const playerNameInput = document.getElementById('player-name-input');
+        const nameInputSection = document.getElementById('name-input-section');
+        const nameLockedSection = document.getElementById('name-locked-section');
+        const currentPlayerNameEl = document.getElementById('current-player-name');
+        const saveScoreBtn = document.getElementById('save-score-btn');
+        const skipSaveBtn = document.getElementById('skip-save-btn');
+        const saveStatus = document.getElementById('save-status');
 
-        // --- FIREBASE/LEADERBOARD FUNCTIONS ---
-        const LEADERBOARD_COLLECTION = 'leaderboard';
+        // --- FIREBASE/LEADERBOARD FUNCTIONS (REALTIME DATABASE) ---
 
         /**
-         * Saves the current score to the public leaderboard.
+         * Saves the current score to the Realtime Database leaderboard.
+         * Only updates if the new score is higher than the existing one.
          */
         window.saveScore = async (finalScore) => {
             if (!window.db || !window.userId) {
                 console.log("Cannot save score: Firebase or User ID not initialized.");
-                return;
+                saveStatus.textContent = '❌ Firebase not initialized';
+                saveStatus.className = 'text-sm text-center mt-4 text-red-400';
+                return false;
             }
 
-            const username = window.userId.substring(0, 8); // Use first 8 chars of ID as username
-            const docId = crypto.randomUUID(); // Unique ID for the score entry
-            const leaderboardPath = `/artifacts/${appId}/public/data/${LEADERBOARD_COLLECTION}`;
-            const userDocRef = doc(window.db, leaderboardPath, docId);
+            const { ref, set, get } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
+            
+            // Get player name from localStorage or use short ID
+            const playerName = getPlayerName() || window.userId.substring(0, 8);
+            const userRef = ref(window.db, `leaderboards/global/${window.userId}`);
 
             try {
-                // Check if the user already has a high score document
-                const q = query(collection(window.db, leaderboardPath), where("userId", "==", window.userId), limit(1));
-                const existingDocs = await getDocs(q);
-                
-                if (!existingDocs.empty) {
-                    // If an existing high score is found, only update if the new score is higher
-                    const existingDoc = existingDocs.docs[0];
-                    const existingScore = existingDoc.data().score;
+                // Check existing score
+                const snapshot = await get(userRef);
+                const existingData = snapshot.val();
 
-                    if (finalScore > existingScore) {
-                        await updateDoc(existingDoc.ref, {
-                            score: finalScore,
-                            timestamp: Date.now(),
-                            username: username, // Update username in case ID changed, though unlikely here
-                        });
-                        console.log("High score updated successfully.");
-                    } else {
-                        console.log("New score is not a personal best, not saving.");
-                    }
-
-                } else {
-                    // If no existing high score, create a new document
-                    await setDoc(userDocRef, {
-                        userId: window.userId,
-                        username: username,
+                // Only save if no existing score OR new score is higher
+                if (!existingData || finalScore > existingData.score) {
+                    await set(userRef, {
+                        name: playerName,
                         score: finalScore,
-                        timestamp: Date.now(),
+                        updatedAt: Date.now()
                     });
-                    console.log("Score saved successfully.");
+                    console.log(`Score saved: ${finalScore} (Previous: ${existingData?.score || 0})`);
+                    
+                    saveStatus.textContent = existingData 
+                        ? `🎉 New High Score! ${finalScore} (Previous: ${existingData.score})`
+                        : `✅ Score saved: ${finalScore}`;
+                    saveStatus.className = 'text-sm text-center mt-4 text-green-400';
+                    return true;
+                } else {
+                    console.log(`Score ${finalScore} not saved. Current best: ${existingData.score}`);
+                    saveStatus.textContent = `⚠️ Your best score is still ${existingData.score}`;
+                    saveStatus.className = 'text-sm text-center mt-4 text-yellow-400';
+                    return false;
                 }
             } catch (error) {
-                console.error("Error saving score to Firestore:", error);
+                console.error("Error saving score to Realtime Database:", error);
+                saveStatus.textContent = `❌ Error: ${error.message}`;
+                saveStatus.className = 'text-sm text-center mt-4 text-red-400';
+                return false;
             }
         };
 
         /**
          * Loads and displays the leaderboard in real-time.
+         * Shows top 10 scores, sorted by score descending.
          */
         window.loadLeaderboard = () => {
             if (!window.db) return;
 
-            const leaderboardPath = `/artifacts/${appId}/public/data/${LEADERBOARD_COLLECTION}`;
-            const q = query(collection(window.db, leaderboardPath), orderBy("score", "desc"), limit(10));
+            const { ref, query, orderByChild, limitToLast, onValue } = 
+                window.loadLeaderboard.imports || {};
+            
+            // Import the functions if not already cached
+            if (!window.loadLeaderboard.imports) {
+                import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js")
+                    .then(module => {
+                        window.loadLeaderboard.imports = module;
+                        window.loadLeaderboard(); // Retry after imports
+                    });
+                return;
+            }
 
-            onSnapshot(q, (snapshot) => {
+            const leaderboardRef = ref(window.db, 'leaderboards/global');
+            const topScoresQuery = query(leaderboardRef, orderByChild('score'), limitToLast(10));
+
+            // Listen to real-time updates
+            onValue(topScoresQuery, (snapshot) => {
+                const scores = [];
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    scores.push({
+                        uid: childSnapshot.key,
+                        name: data.name,
+                        score: data.score,
+                        updatedAt: data.updatedAt
+                    });
+                });
+
+                // Sort descending (limitToLast gives ascending order)
+                scores.sort((a, b) => b.score - a.score);
+
+                // Display leaderboard
                 leaderboardListEl.innerHTML = '';
-                if (snapshot.empty) {
+                if (scores.length === 0) {
                     leaderboardListEl.innerHTML = '<p class="text-gray-400">No scores yet! Be the first!</p>';
                     return;
                 }
 
-                snapshot.docs.forEach((doc, index) => {
-                    const data = doc.data();
-                    const isCurrentUser = data.userId === window.userId;
+                scores.forEach((entry, index) => {
+                    const isCurrentUser = entry.uid === window.userId;
                     const listItem = document.createElement('li');
                     listItem.className = `flex justify-between ${isCurrentUser ? 'text-yellow-300 font-bold' : 'text-white'}`;
                     listItem.innerHTML = `
                         <span class="w-1/12">${index + 1}.</span>
-                        <span class="w-7/12 truncate">${data.username}</span>
-                        <span class="w-4/12 text-right">${data.score}</span>
+                        <span class="w-7/12 truncate">${entry.name}</span>
+                        <span class="w-4/12 text-right">${entry.score}</span>
                     `;
                     leaderboardListEl.appendChild(listItem);
                 });
@@ -664,12 +776,46 @@
             boardEl.style.opacity = '0.5';
             setTimeout(() => { boardEl.style.opacity = '1'; }, 100);
             
-            // Save the final score
-            window.saveScore(score);
+            // Show name input modal instead of auto-saving
+            showNameModal(score);
 
             // Remove input handlers until restart
             document.removeEventListener('keydown', handleKeyDown);
             touchControls.removeEventListener('click', handleTouchControls);
+        }
+
+        /**
+         * Shows the name input modal after game over
+         */
+        function showNameModal(finalScore) {
+            modalScore.textContent = finalScore;
+            saveStatus.textContent = '';
+            
+            const currentName = getPlayerName();
+            const canChangeName = canChangeNameToday();
+
+            if (canChangeName) {
+                // Cho phép nhập tên
+                nameInputSection.classList.remove('hidden');
+                nameLockedSection.classList.add('hidden');
+                playerNameInput.value = currentName || '';
+                playerNameInput.disabled = false;
+            } else {
+                // Đã đặt tên hôm nay, chỉ hiển thị
+                nameInputSection.classList.add('hidden');
+                nameLockedSection.classList.remove('hidden');
+                currentPlayerNameEl.textContent = currentName || 'Anonymous';
+            }
+
+            // Show modal
+            nameModal.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the name modal
+         */
+        function hideNameModal() {
+            nameModal.classList.add('hidden');
         }
 
         // --- INPUT HANDLING ---
@@ -743,6 +889,56 @@
         
         startButton.addEventListener('click', startGame);
         pauseButton.addEventListener('click', pauseGame);
+        
+        // Modal button handlers
+        saveScoreBtn.addEventListener('click', async () => {
+            // Lưu tên nếu có thể thay đổi
+            if (canChangeNameToday()) {
+                const newName = playerNameInput.value.trim();
+                if (newName && newName.length > 0 && newName.length <= 20) {
+                    savePlayerName(newName);
+                    console.log(`Player name saved: ${newName}`);
+                    
+                    // Update user display
+                    const displayName = newName;
+                    document.getElementById('user-id-display').textContent = `Player: ${displayName}`;
+                } else if (newName.length > 20) {
+                    saveStatus.textContent = '❌ Name too long (max 20 characters)';
+                    saveStatus.className = 'text-sm text-center mt-4 text-red-400';
+                    return;
+                }
+            }
+
+            // Disable button while saving
+            saveScoreBtn.disabled = true;
+            saveStatus.textContent = '⏳ Saving...';
+            saveStatus.className = 'text-sm text-center mt-4 text-yellow-400';
+
+            // Save score
+            const finalScore = parseInt(modalScore.textContent);
+            const saved = await window.saveScore(finalScore);
+
+            // Re-enable button
+            saveScoreBtn.disabled = false;
+
+            // Close modal after 2 seconds if successful
+            if (saved) {
+                setTimeout(() => {
+                    hideNameModal();
+                }, 2000);
+            }
+        });
+
+        skipSaveBtn.addEventListener('click', () => {
+            hideNameModal();
+        });
+
+        // Close modal when clicking outside
+        nameModal.addEventListener('click', (e) => {
+            if (e.target === nameModal) {
+                hideNameModal();
+            }
+        });
         
         // Initial setup for the board display (empty)
         createBoard();
