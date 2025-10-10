@@ -5,6 +5,35 @@
 ![Version](https://img.shields.io/badge/version-2.0-blue)
 ![Firebase](https://img.shields.io/badge/firebase-realtime_database-orange)
 ![Status](https://img.shields.io/badge/status-ready-green)
+![Educational](https://img.shields.io/badge/educational-kids_7--12-brightgreen)
+
+---
+
+## 🎓 Educational Project / Dự án Giáo dục
+
+**Keltris được thiết kế đặc biệt để dạy lập trình cho trẻ em 7-12 tuổi (học sinh lớp 7).**
+
+### Dành cho Giáo viên
+- 📚 [Teacher Guide](docs/teacher-guide.md) - Hướng dẫn giảng dạy
+- 📖 [Lesson Plans](docs/lesson/) - 5 bài học chi tiết
+- ✅ [Educational Checklist](docs/CHECKLIST-EDU.md) - Kiểm tra chất lượng giáo dục
+
+### Dành cho Học sinh
+- 📝 [Bài 1: Giới thiệu Code](docs/lesson/01-intro-to-code.md)
+- 🔄 [Bài 2: Game Loop](docs/lesson/02-game-loop.md)
+- 🧩 [Bài 3: Các mảnh Tetris](docs/lesson/03-pieces-and-shapes.md)
+- 📊 [Bài 4: Board và Mảng 2D](docs/lesson/04-board-and-arrays.md)
+- 🏆 [Bài 5: Leaderboard và Firebase](docs/lesson/05-leaderboard-firebase.md)
+- 💪 [Bài tập](docs/lesson/exercises.md)
+
+### Đặc điểm Code
+- ✅ Comment bằng tiếng Việt dễ hiểu
+- ✅ Giải thích từng bước chi tiết
+- ✅ Có ví dụ "Try it" để thử nghiệm
+- ✅ Sử dụng emoji để làm nổi bật (✅❌❓💡)
+- ✅ Code đơn giản, dễ đọc
+
+> **Note for Contributors**: When contributing code, please follow our [Educational Code Guidelines](CONTRIBUTING-EDU.md) to keep the codebase learnable for kids!
 
 ---
 
