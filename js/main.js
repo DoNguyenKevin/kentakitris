@@ -27,6 +27,10 @@ const pauseButton = document.getElementById('pause-button');
 const touchControls = document.getElementById('touch-controls');
 const statusEl = document.getElementById('status-message');
 const boardEl = document.getElementById('game-board');
+const settingsButton = document.getElementById('settings-button');
+const settingsModal = document.getElementById('settings-modal');
+const settingsCloseBtn = document.getElementById('settings-close-btn');
+const showSpeedToggle = document.getElementById('show-speed-toggle');
 
 // Make currentPiece available globally for game-controls
 import * as gameState from './game-state.js';
@@ -104,6 +108,37 @@ function detachInputHandlers() {
     touchControls.removeEventListener('click', handleTouchControls);
 }
 
+// --- SETTINGS FUNCTIONS ---
+
+/**
+ * Shows the settings modal
+ */
+function showSettingsModal() {
+    // Load current settings
+    const showSpeed = localStorage.getItem('showSpeed') === 'true';
+    showSpeedToggle.checked = showSpeed;
+    
+    settingsModal.classList.remove('hidden');
+}
+
+/**
+ * Hides the settings modal
+ */
+function hideSettingsModal() {
+    settingsModal.classList.add('hidden');
+}
+
+/**
+ * Saves settings to localStorage
+ */
+function saveSettings() {
+    const showSpeed = showSpeedToggle.checked;
+    localStorage.setItem('showSpeed', showSpeed.toString());
+    
+    // Update display immediately
+    updateStats(score, level);
+}
+
 // --- INITIALIZATION ---
 async function init() {
     // Initialize Firebase
@@ -118,6 +153,29 @@ async function init() {
     // Set up button event listeners
     startButton.addEventListener('click', startGame);
     pauseButton.addEventListener('click', togglePause);
+
+    // Settings button handler
+    settingsButton.addEventListener('click', () => {
+        showSettingsModal();
+    });
+
+    // Settings modal handlers
+    settingsCloseBtn.addEventListener('click', () => {
+        saveSettings();
+        hideSettingsModal();
+    });
+
+    showSpeedToggle.addEventListener('change', () => {
+        saveSettings();
+    });
+
+    // Close settings modal when clicking outside
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            saveSettings();
+            hideSettingsModal();
+        }
+    });
 
     // Initial setup for the board display (empty)
     createBoard();

@@ -279,6 +279,12 @@ const powerupModal = document.getElementById('powerup-modal');
 const powerupChoicesEl = document.getElementById('powerup-choices');
 const activePowerupsDisplay = document.getElementById('active-powerups-display');
 
+// Settings modal elements
+const settingsModal = document.getElementById('settings-modal');
+const settingsButton = document.getElementById('settings-button');
+const settingsCloseBtn = document.getElementById('settings-close-btn');
+const showSpeedToggle = document.getElementById('show-speed-toggle');
+
 // --- FIREBASE/LEADERBOARD FUNCTIONS (REALTIME DATABASE) ---
 
 /**
@@ -1070,6 +1076,19 @@ function gameTick(forceLock = false) {
 function updateStats() {
     scoreEl.textContent = score;
     levelEl.textContent = level;
+    
+    // Update speed display if settings allow it
+    const speedEl = document.getElementById('speed-display');
+    if (speedEl) {
+        const showSpeed = localStorage.getItem('showSpeed') === 'true';
+        if (showSpeed) {
+            const currentSpeed = Math.round(getCurrentDropDelay());
+            speedEl.textContent = `(${currentSpeed}ms)`;
+            speedEl.classList.remove('hidden');
+        } else {
+            speedEl.classList.add('hidden');
+        }
+    }
 }
 
 /**
@@ -1223,6 +1242,37 @@ function hideNameModal() {
     nameModal.classList.add('hidden');
 }
 
+// --- SETTINGS FUNCTIONS ---
+
+/**
+ * Shows the settings modal
+ */
+function showSettingsModal() {
+    // Load current settings
+    const showSpeed = localStorage.getItem('showSpeed') === 'true';
+    showSpeedToggle.checked = showSpeed;
+    
+    settingsModal.classList.remove('hidden');
+}
+
+/**
+ * Hides the settings modal
+ */
+function hideSettingsModal() {
+    settingsModal.classList.add('hidden');
+}
+
+/**
+ * Saves settings to localStorage
+ */
+function saveSettings() {
+    const showSpeed = showSpeedToggle.checked;
+    localStorage.setItem('showSpeed', showSpeed.toString());
+    
+    // Update display immediately
+    updateStats();
+}
+
 // --- INPUT HANDLING ---
 
 function handleKeyDown(event) {
@@ -1349,6 +1399,29 @@ skipSaveBtn.addEventListener('click', () => {
 nameModal.addEventListener('click', (e) => {
     if (e.target === nameModal) {
         hideNameModal();
+    }
+});
+
+// Settings button handler
+settingsButton.addEventListener('click', () => {
+    showSettingsModal();
+});
+
+// Settings modal handlers
+settingsCloseBtn.addEventListener('click', () => {
+    saveSettings();
+    hideSettingsModal();
+});
+
+showSpeedToggle.addEventListener('change', () => {
+    saveSettings();
+});
+
+// Close settings modal when clicking outside
+settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) {
+        saveSettings();
+        hideSettingsModal();
     }
 });
 

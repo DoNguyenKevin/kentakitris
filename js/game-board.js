@@ -1,4 +1,4 @@
-import { BOARD_WIDTH, BOARD_HEIGHT, NEXT_GRID_SIZE, COLORS } from './game-constants.js';
+import { BOARD_WIDTH, BOARD_HEIGHT, NEXT_GRID_SIZE, COLORS, INITIAL_DROP_DELAY } from './game-constants.js';
 import { board, currentPiece, nextPiece } from './game-state.js';
 
 // --- DOM ELEMENTS ---
@@ -170,10 +170,28 @@ export function flashClearedLines(clearedRows) {
 
 /**
  * Updates score and level displays.
+ * @param {number} score - Current score
+ * @param {number} level - Current level
+ * @param {number} speed - Current drop speed in ms (optional, will be calculated if not provided)
  */
-export function updateStats(score, level) {
+export function updateStats(score, level, speed) {
     const scoreEl = document.getElementById('score-display');
     const levelEl = document.getElementById('level-display');
+    const speedEl = document.getElementById('speed-display');
+    
     scoreEl.textContent = score;
     levelEl.textContent = level;
+    
+    // Update speed display if element exists
+    if (speedEl) {
+        const showSpeed = localStorage.getItem('showSpeed') === 'true';
+        if (showSpeed) {
+            // Calculate speed if not provided
+            const currentSpeed = speed !== undefined ? speed : Math.round(INITIAL_DROP_DELAY / level);
+            speedEl.textContent = `(${currentSpeed}ms)`;
+            speedEl.classList.remove('hidden');
+        } else {
+            speedEl.classList.add('hidden');
+        }
+    }
 }
