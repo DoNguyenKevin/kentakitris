@@ -1,8 +1,8 @@
 # Power-ups System Implementation Summary
 
-## ✅ Implementation Complete
+## ✅ Implementation Complete - ALL SKILLS WORKING!
 
-The power-ups system has been successfully integrated into Keltris! Players now receive a choice of 3 random power-ups every time they level up.
+The power-ups system has been fully implemented in Keltris! All 15 skills are now functional, including the 5 advanced skills that were previously TODO.
 
 ## 🎮 How It Works
 
@@ -14,16 +14,17 @@ The power-ups system has been successfully integrated into Keltris! Players now 
 ### Power-up Types
 
 #### 1. **Instant** (Immediate one-time effect)
-- ⚡ **Clear Bottom** - Instantly clears bottom 3 rows
-- 🔫 **Laser** - Clears entire bottom row
-- 🎲 **Random Clear** - Clears 5-8 random filled blocks
+- 🔥 **Clear Bottom** - Instantly clears bottom 2 rows
+- ⚡ **Laser** - Clears entire highest column
+- 🎲 **Random Clear** - Clears 5-10 random blocks
+- 🌀 **Teleport** - ✅ Click anywhere on board to place current piece
 
 #### 2. **Duration** (Timed effects)
-- ⏱️ **Slow Time** (15s) - 50% slower drop speed
-- 💰 **Score Boost** (20s) - 2x score multiplier
+- ⏰ **Slow Time** (30s) - 50% slower drop speed
+- 💰 **Score Boost** (20s) - +50% score multiplier
 - ❄️ **Time Freeze** (10s) - Pieces don't drop automatically
-- 🔄 **Reverse Gravity** (15s) - TODO: Pieces float up instead of down
-- 📏 **Wide Mode** (20s) - TODO: Board expands to 15 columns
+- 🔺 **Reverse Gravity** (15s) - ✅ Pieces float up instead of down
+- 📏 **Wide Mode** (25s) - ✅ Board expands from 10 to 12 columns
 
 #### 3. **Permanent** (Lasts entire game)
 - 👻 **Ghost Mode** - Show piece preview at drop position
@@ -31,11 +32,11 @@ The power-ups system has been successfully integrated into Keltris! Players now 
 - 🔮 **Preview+** - See next 3 pieces instead of 1
 
 #### 4. **Passive** (Automatic trigger)
-- 🛡️ **Shield** - Save from game over once, clears top 4 rows
+- 🛡️ **Shield** - Save from game over once, clears entire board
 
 #### 5. **Next Piece** (Modifies next piece)
-- 💣 **Bomb** - TODO: Next piece clears 3x3 area on landing
-- ✨ **Magic Block** - TODO: Next piece fills gaps intelligently
+- 💣 **Bomb** - ✅ Next piece creates 3x3 explosion on landing
+- ✨ **Magic Block** - ✅ Next piece auto-fills gaps (max 5 blocks)
 
 ## 🎨 Rarity System
 
@@ -202,11 +203,11 @@ const delay = getCurrentDropDelay();
 ✅ Slow Time affects drop speed  
 ✅ Score Boost multiplies score  
 ✅ Time Freeze stops auto-drop  
-⬜ Teleport (not implemented)  
-⬜ Reverse Gravity (not implemented)  
-⬜ Wide Mode (not implemented)  
-⬜ Bomb (not implemented)  
-⬜ Magic Block (not implemented)  
+✅ **Teleport** - Click to place piece (NEW!)  
+✅ **Reverse Gravity** - Pieces float up (NEW!)  
+✅ **Wide Mode** - Board expands to 12 columns (NEW!)  
+✅ **Bomb** - 3x3 explosion on landing (NEW!)  
+✅ **Magic Block** - Auto-fills gaps (NEW!)  
 
 ## 📊 Balance Notes
 

@@ -75,6 +75,20 @@
 - ✅ **Dynamic Speed Display** - Tốc độ tự động tính theo level (1000ms/level)
 - ✅ **Both Versions** - Hoạt động trên cả index.html và index-modular.html
 
+### 💪 Power-ups/Skills System (NEW!)
+- ✅ **15 Unique Skills** - Đa dạng kỹ năng từ tấn công đến phòng thủ
+- ✅ **4 Rarity Tiers** - Common, Uncommon, Rare, Legendary
+- ✅ **5 Skill Types** - Instant, Duration, Permanent, Passive, NextPiece
+- ✅ **Level-up Rewards** - Chọn skill mỗi khi lên level
+- ✅ **Advanced Mechanics**:
+  - 💣 **Bomb** - Vụ nổ 3x3 khi đặt mảnh
+  - ✨ **Magic Block** - Tự động lấp đầy khoảng trống
+  - 🌀 **Teleport** - Click để dịch chuyển mảnh
+  - 🔺 **Reverse Gravity** - Mảnh bay lên thay vì rơi xuống
+  - 📏 **Wide Mode** - Mở rộng bảng từ 10 → 12 cột
+- ✅ **Visual Effects** - CSS animations cho từng skill
+- ✅ **Modular Design** - Code được tách module dễ bảo trì
+
 ---
 
 ## 🚀 Quick Start
@@ -204,6 +218,79 @@ localStorage:
 ```
 
 **Đọc thêm**: [`FEATURE-NAME-INPUT.md`](docs/FEATURE-NAME-INPUT.md)
+
+---
+
+## 💪 Power-ups/Skills System
+
+### 🎯 Cách Sử Dụng Skills
+
+Mỗi khi lên level (xóa 10 hàng), bạn sẽ được chọn 1 trong 3 skill ngẫu nhiên:
+
+```
+1. Chơi và xóa 10 hàng → Level Up!
+2. Game tạm dừng, modal hiện 3 skill
+3. Click vào skill muốn chọn
+4. Skill được kích hoạt ngay lập tức
+5. Game tiếp tục
+```
+
+### 📚 Danh Sách Đầy Đủ
+
+#### 🔥 Tấn Công (Offensive)
+- 💣 **Bomb** - Vụ nổ 3x3 xóa các ô xung quanh
+- 🔥 **Clear Bottom** - Xóa 2 hàng dưới cùng
+- ⚡ **Laser** - Xóa toàn bộ cột cao nhất
+- 🎲 **Random Clear** - Xóa 5-10 ô ngẫu nhiên
+
+#### 🛡️ Phòng Thủ (Defensive)
+- ⏰ **Slow Time** - Giảm 50% tốc độ rơi (30s)
+- 👻 **Ghost Mode** - Xem bóng ma của mảnh (vĩnh viễn)
+- 🛡️ **Shield** - Cứu 1 lần khi thua
+- ❄️ **Time Freeze** - Dừng tự động rơi (10s)
+
+#### ✨ Đặc Biệt (Special)
+- 🌀 **Teleport** - Click để dịch chuyển mảnh
+- 🔺 **Reverse Gravity** - Mảnh bay lên (15s)
+- 📏 **Wide Mode** - Bảng rộng 12 cột (25s)
+- ✨ **Magic Block** - Tự động lấp khoảng trống
+
+#### 💰 Tiện Ích (Utility)
+- 💰 **Score Boost** - +50% điểm (20s)
+- 🔄 **Swap Hold** - Đổi mảnh (nhấn H)
+- 🔮 **Preview+** - Xem 3 mảnh tiếp theo
+
+### 📖 Hướng Dẫn Chi Tiết
+
+**Cho người chơi**: [`SKILLS-GUIDE.md`](docs/SKILLS-GUIDE.md) - Hướng dẫn đầy đủ từng skill  
+**Cho developers**: [`SKILLS-TECHNICAL.md`](docs/SKILLS-TECHNICAL.md) - Tài liệu kỹ thuật
+
+### 🎮 Ví Dụ Skill Mạnh
+
+#### Teleport 🌀
+```
+1. Chọn skill Teleport
+2. Bảng sáng tím, con trỏ thành dấu +
+3. Click vào vị trí muốn đặt mảnh
+4. Mảnh dịch chuyển tức thì!
+```
+
+#### Wide Mode 📏
+```
+Bình thường:          Wide Mode:
+████████████          ░████████████░
+████████████    →     ░████████████░
+████████████          ░████████████░
+(10 cột)              (12 cột)
+```
+
+#### Bomb 💣
+```
+Đặt mảnh:            Sau vụ nổ:
+████████             ████████
+██░█░███      →      ██░░░███
+████████             ████████
+```
 
 ---
 
@@ -383,6 +470,10 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 - [`README-LEADERBOARD.md`](docs/README-LEADERBOARD.md) - Leaderboard overview
 - [`FEATURE-NAME-INPUT.md`](docs/FEATURE-NAME-INPUT.md) - Name input technical
 - [`SUMMARY-NAME-INPUT.md`](docs/SUMMARY-NAME-INPUT.md) - Feature summary
+- [`SKILLS-GUIDE.md`](docs/SKILLS-GUIDE.md) - 🎮 Hướng dẫn sử dụng Skills (cho người chơi)
+- [`SKILLS-TECHNICAL.md`](docs/SKILLS-TECHNICAL.md) - 🔧 Tài liệu kỹ thuật Skills (cho developers)
+- [`POWERUPS-IMPLEMENTATION.md`](docs/POWERUPS-IMPLEMENTATION.md) - Power-ups system overview
+- [`TEST-POWERUPS.md`](docs/TEST-POWERUPS.md) - Testing guide for power-ups
 
 ### Testing & Demo
 - [`TEST-NAME-INPUT.md`](docs/TEST-NAME-INPUT.md) - Testing guide
