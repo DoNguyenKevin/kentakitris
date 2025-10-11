@@ -733,3 +733,47 @@ body {
     }
 }
 
+/* === SKILL-SPECIFIC STYLES === */
+/* CSS cho các kỹ năng đặc biệt */
+
+/* Teleport Mode - Chế độ dịch chuyển */
+#game-board.teleport-mode {
+    cursor: crosshair; /* Con trỏ hình chữ thập */
+    box-shadow: 0 0 20px 5px rgba(138, 43, 226, 0.6); /* Hiệu ứng sáng tím */
+    animation: teleport-pulse 1s ease-in-out infinite;
+}
+
+@keyframes teleport-pulse {
+    0%, 100% {
+        box-shadow: 0 0 20px 5px rgba(138, 43, 226, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 30px 8px rgba(138, 43, 226, 0.9);
+    }
+}
+
+#game-board.teleport-mode .block:hover {
+    background-color: rgba(138, 43, 226, 0.3) !important;
+    border-color: #8a2be2;
+}
+
+/* Wide Mode - Chế độ mở rộng */
+#game-board.wide-mode {
+    border-color: #4169e1; /* Royal blue border */
+    box-shadow: 0 0 15px 3px rgba(65, 105, 225, 0.5);
+}
+
+/* Reverse Gravity indicator (có thể thêm vào UI) */
+.reverse-gravity-active {
+    animation: float-up 2s ease-in-out infinite;
+}
+
+@keyframes float-up {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
