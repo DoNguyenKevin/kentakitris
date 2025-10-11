@@ -2,18 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Pixel Tetris</title>
-    <!-- Load Tailwind CSS for utility classes -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load custom CSS -->
+    <!-- Load custom CSS with Tailwind -->
     <link rel="stylesheet" href="index.css">
     <!-- Load Firebase initialization script -->
     <script type="module" src="js/index-firebase-init.js"></script>
 </head>
 <body class="selection:bg-yellow-400 selection:text-black">
 
-    <div class="flex flex-col md:flex-row max-w-7xl w-full justify-center">
+    <div class="flex flex-col md:flex-row max-w-7xl w-full justify-center items-start px-2">
 
         <!-- Game Board Container -->
         <div class="board-container pixel-border p-1">
