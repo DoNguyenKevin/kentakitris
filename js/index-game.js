@@ -1108,6 +1108,13 @@ function clearLines() {
         }
 
         updateStats();
+        
+        // Auto-save score after earning points
+        if (window.saveScore && score > 0) {
+            window.saveScore(score).catch(err => {
+                console.log('Auto-save score failed:', err);
+            });
+        }
     }
 }
 
@@ -1365,8 +1372,12 @@ function endGame() {
     boardEl.style.opacity = '0.5';
     setTimeout(() => { boardEl.style.opacity = '1'; }, 100);
     
-    // Show name input modal instead of auto-saving
-    showNameModal(score);
+    // Auto-save final score (no modal needed)
+    if (window.saveScore && score > 0) {
+        window.saveScore(score).catch(err => {
+            console.log('Failed to save final score:', err);
+        });
+    }
 
     // Remove input handlers until restart
     document.removeEventListener('keydown', handleKeyDown);
