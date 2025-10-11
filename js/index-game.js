@@ -1108,13 +1108,6 @@ function clearLines() {
         }
 
         updateStats();
-        
-        // Auto-save score after earning points
-        if (window.saveScore && score > 0) {
-            window.saveScore(score).catch(err => {
-                console.log('Auto-save score failed:', err);
-            });
-        }
     }
 }
 
