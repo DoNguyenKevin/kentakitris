@@ -1,3 +1,10 @@
+// --- IMPORTS - Nhập các module skill ---
+import * as BombSkill from './powerups/bomb-skill.js';
+import * as MagicBlockSkill from './powerups/magic-block-skill.js';
+import * as TeleportSkill from './powerups/teleport-skill.js';
+import * as ReverseGravitySkill from './powerups/reverse-gravity-skill.js';
+import * as WideModeSkill from './powerups/wide-mode-skill.js';
+
 // --- HELPER FUNCTIONS FOR NAME MANAGEMENT ---
 
 /**
@@ -33,7 +40,9 @@ function getPlayerName() {
 }
 
 // --- GAME CONSTANTS ---
-const BOARD_WIDTH = 10;
+// Lưu ý: BOARD_WIDTH có thể thay đổi khi Wide Mode active
+let BOARD_WIDTH = 10; // Chiều rộng bảng (có thể thay đổi)
+const ORIGINAL_BOARD_WIDTH = 10; // Chiều rộng gốc (không đổi)
 const BOARD_HEIGHT = 20;
 const NEXT_GRID_SIZE = 4;
 const SCORE_PER_LINE = 10;
@@ -251,6 +260,10 @@ let canSwap = true; // For SWAP_PIECE powerup
 let shieldActive = false; // For SHIELD powerup
 let nextPieces = []; // For PREVIEW_PLUS powerup (array of 3)
 let scoreMultiplier = 1.0; // For SCORE_BOOST powerup
+
+// Trạng thái các skill mới (New skills state)
+let teleportDeactivator = null; // Hàm để tắt chế độ teleport
+let wideModeOriginalWidth = 10; // Chiều rộng bảng gốc trước khi Wide Mode
 
 // --- DOM ELEMENTS ---
 const boardEl = document.getElementById('game-board');
@@ -547,18 +560,19 @@ function activatePowerup(powerup) {
 
 /**
  * Activate instant powerups
+ * Kích hoạt các kỹ năng tức thì
  */
 function activateInstantPowerup(powerup) {
     switch (powerup.id) {
         case 'CLEAR_BOTTOM':
-            // Clear bottom 2 rows
+            // Clear bottom 2 rows - Xóa 2 hàng dưới cùng
             board.splice(BOARD_HEIGHT - 2, 2);
             board.unshift(Array(BOARD_WIDTH).fill(0), Array(BOARD_WIDTH).fill(0));
             drawBoard();
             break;
             
         case 'LASER':
-            // Find highest column
+            // Find highest column - Tìm cột cao nhất
             let highestCol = 0;
             let minHeight = BOARD_HEIGHT;
             for (let c = 0; c < BOARD_WIDTH; c++) {
@@ -569,7 +583,7 @@ function activateInstantPowerup(powerup) {
                     }
                 }
             }
-            // Clear that column
+            // Clear that column - Xóa cột đó
             for (let r = 0; r < BOARD_HEIGHT; r++) {
                 board[r][highestCol] = 0;
             }
@@ -577,7 +591,7 @@ function activateInstantPowerup(powerup) {
             break;
             
         case 'RANDOM_CLEAR':
-            // Clear 5-10 random blocks
+            // Clear 5-10 random blocks - Xóa 5-10 ô ngẫu nhiên
             const clearCount = Math.floor(Math.random() * 6) + 5;
             for (let i = 0; i < clearCount; i++) {
                 const r = Math.floor(Math.random() * BOARD_HEIGHT);
@@ -586,11 +600,43 @@ function activateInstantPowerup(powerup) {
             }
             drawBoard();
             break;
+            
+        case 'TELEPORT':
+            // Kích hoạt chế độ Teleport - người chơi click để đặt mảnh
+            teleportDeactivator = TeleportSkill.activateTeleportMode(
+                boardEl, 
+                (cellX, cellY) => {
+                    // Callback khi người chơi click vào bảng
+                    const newPiece = TeleportSkill.tryTeleport(
+                        currentPiece, 
+                        cellX, 
+                        cellY, 
+                        checkCollision
+                    );
+                    
+                    if (newPiece) {
+                        // Teleport thành công!
+                        currentPiece = newPiece;
+                        drawBoard();
+                        
+                        // Tắt chế độ teleport sau khi dùng
+                        if (teleportDeactivator) {
+                            teleportDeactivator();
+                            teleportDeactivator = null;
+                        }
+                    } else {
+                        // Vị trí không hợp lệ, hiển thị thông báo
+                        console.log('❌ Cannot teleport there!');
+                    }
+                }
+            );
+            break;
     }
 }
 
 /**
  * Activate duration powerups
+ * Kích hoạt các kỹ năng có thời gian
  */
 function activateDurationPowerup(powerup) {
     const endTime = Date.now() + powerup.duration;
@@ -608,6 +654,30 @@ function activateDurationPowerup(powerup) {
         case 'TIME_FREEZE':
             clearInterval(dropIntervalId);
             dropIntervalId = null;
+            break;
+            
+        case 'REVERSE_GRAVITY':
+            // Kích hoạt đảo trọng lực
+            ReverseGravitySkill.activateReverseGravity();
+            break;
+            
+        case 'WIDE_PIECE':
+            // Kích hoạt Wide Mode - mở rộng bảng
+            board = WideModeSkill.activateWideMode(board, BOARD_HEIGHT, 12);
+            BOARD_WIDTH = WideModeSkill.getCurrentBoardWidth();
+            
+            // Cập nhật hiển thị
+            WideModeSkill.updateBoardDisplay(boardEl, BOARD_WIDTH);
+            
+            // Điều chỉnh vị trí mảnh hiện tại
+            if (currentPiece) {
+                currentPiece = WideModeSkill.adjustPieceForWideMode(
+                    currentPiece, 
+                    ORIGINAL_BOARD_WIDTH
+                );
+            }
+            
+            drawBoard();
             break;
     }
     
@@ -668,6 +738,7 @@ function activateNextPiecePowerup(powerup) {
 
 /**
  * Remove powerup effect
+ * Xóa hiệu ứng của kỹ năng
  */
 function removePowerup(powerupId) {
     // Remove from active list
@@ -679,7 +750,7 @@ function removePowerup(powerupId) {
         delete powerupTimers[powerupId];
     }
     
-    // Revert effects
+    // Revert effects - Hoàn nguyên hiệu ứng
     switch (powerupId) {
         case 'SLOW_TIME':
             restartDropInterval();
@@ -690,6 +761,36 @@ function removePowerup(powerupId) {
         case 'TIME_FREEZE':
             if (isPlaying && !isPaused) {
                 startDropInterval();
+            }
+            break;
+        case 'REVERSE_GRAVITY':
+            // Tắt đảo trọng lực
+            ReverseGravitySkill.deactivateReverseGravity();
+            break;
+        case 'WIDE_PIECE':
+            // Tắt Wide Mode - thu hẹp bảng về kích thước gốc
+            board = WideModeSkill.deactivateWideMode(board, BOARD_HEIGHT);
+            BOARD_WIDTH = ORIGINAL_BOARD_WIDTH;
+            
+            // Cập nhật hiển thị
+            WideModeSkill.updateBoardDisplay(boardEl, BOARD_WIDTH);
+            
+            // Kiểm tra xem mảnh hiện tại có bị ra ngoài bảng không
+            if (currentPiece && checkCollision(currentPiece)) {
+                // Di chuyển mảnh vào trong bảng
+                currentPiece.x = Math.max(0, Math.min(
+                    currentPiece.x, 
+                    BOARD_WIDTH - currentPiece.shape[0].length
+                ));
+            }
+            
+            drawBoard();
+            break;
+        case 'TELEPORT':
+            // Tắt chế độ teleport nếu còn đang bật
+            if (teleportDeactivator) {
+                teleportDeactivator();
+                teleportDeactivator = null;
             }
             break;
     }
@@ -926,6 +1027,7 @@ function checkCollision(piece) {
 
 /**
  * Locks the current piece into the board state.
+ * Khóa mảnh ghép hiện tại vào bảng
  */
 function lockPiece() {
     currentPiece.shape.forEach((row, r) => {
@@ -940,6 +1042,36 @@ function lockPiece() {
             }
         });
     });
+    
+    // Kiểm tra và kích hoạt các kỹ năng nextPiece (Bomb, Magic Block)
+    
+    // BOMB SKILL - Tạo vụ nổ 3x3
+    if (BombSkill.hasBombPending(activePowerups)) {
+        BombSkill.activateBombEffect(
+            board, 
+            currentPiece, 
+            BOARD_WIDTH, 
+            BOARD_HEIGHT
+        );
+        activePowerups = BombSkill.consumeBombUse(activePowerups);
+        updateActivePowerupsDisplay();
+        console.log('💣 Bomb exploded!');
+    }
+    
+    // MAGIC BLOCK SKILL - Lấp đầy các khoảng trống
+    if (MagicBlockSkill.hasMagicBlockPending(activePowerups)) {
+        const filled = MagicBlockSkill.activateMagicBlockEffect(
+            board, 
+            currentPiece, 
+            BOARD_WIDTH, 
+            BOARD_HEIGHT
+        );
+        activePowerups = MagicBlockSkill.consumeMagicBlockUse(activePowerups);
+        updateActivePowerupsDisplay();
+        if (filled) {
+            console.log('✨ Magic Block filled gaps!');
+        }
+    }
 }
 
 /**
@@ -998,13 +1130,21 @@ function movePiece(dx, dy) {
 
 /**
  * Hard drops the current piece to the bottom.
+ * Thả nhanh mảnh xuống đáy (hoặc lên trần nếu Reverse Gravity)
  */
 function hardDrop() {
     if (!currentPiece) return;
     let drops = 0;
-    while (movePiece(0, 1)) {
-        drops++;
+    
+    // Sử dụng hướng trọng lực phù hợp
+    if (ReverseGravitySkill.isReverseGravityActive()) {
+        drops = ReverseGravitySkill.hardDropWithGravity(currentPiece, movePiece);
+    } else {
+        while (movePiece(0, 1)) {
+            drops++;
+        }
     }
+    
     // Lock the piece immediately after hard drop
     if (drops > 0) {
         gameTick(true);
@@ -1043,13 +1183,20 @@ function rotatePiece() {
 
 /**
  * The main game loop tick (gravity).
+ * Vòng lặp chính của game (trọng lực)
  * @param {boolean} forceLock - Whether to force a lock if movement fails (used for hard drop).
  */
 function gameTick(forceLock = false) {
     if (!isPlaying || isPaused) return;
 
-    // 1. Try to move down
-    const moved = movePiece(0, 1);
+    // 1. Try to move down (or up if Reverse Gravity is active)
+    // Thử di chuyển xuống (hoặc lên nếu Reverse Gravity đang hoạt động)
+    let moved;
+    if (ReverseGravitySkill.isReverseGravityActive()) {
+        moved = ReverseGravitySkill.moveWithGravity(currentPiece, movePiece);
+    } else {
+        moved = movePiece(0, 1);
+    }
 
     // 2. If movement failed (collision), lock the piece
     if (!moved || forceLock) {
@@ -1059,6 +1206,24 @@ function gameTick(forceLock = false) {
         // 3. Spawn next piece
         currentPiece = nextPiece;
         nextPiece = getRandomPiece();
+        
+        // Điều chỉnh vị trí spawn cho Reverse Gravity
+        if (ReverseGravitySkill.isReverseGravityActive()) {
+            currentPiece = ReverseGravitySkill.adjustSpawnPosition(
+                currentPiece, 
+                BOARD_WIDTH, 
+                BOARD_HEIGHT
+            );
+        }
+        
+        // Điều chỉnh vị trí spawn cho Wide Mode
+        if (WideModeSkill.isWideModeActive()) {
+            currentPiece = WideModeSkill.adjustPieceForWideMode(
+                currentPiece, 
+                ORIGINAL_BOARD_WIDTH
+            );
+        }
+        
         drawNextPiece();
 
         // 4. Check for Game Over (new piece immediately collides)

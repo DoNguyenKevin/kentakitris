@@ -115,15 +115,13 @@ Test each instant powerup:
 
 ## 🐛 Known Issues / TODO
 
-### Not Yet Implemented
-These powerups show in the modal but don't have full functionality:
-- ⏸️ **Teleport** - Click-to-place mechanic not coded
-- ⏸️ **Reverse Gravity** - Upward movement not coded
-- ⏸️ **Wide Mode** - Board expansion not coded
-- ⏸️ **Bomb** - Explosion effect not coded
-- ⏸️ **Magic Block** - Smart fill not coded
-
-If you select these, they'll be activated but won't do anything yet.
+### ✅ All Skills Now Implemented!
+All 15 power-ups are now fully functional:
+- ✅ **Teleport** - Click-to-place mechanic WORKING
+- ✅ **Reverse Gravity** - Upward movement WORKING
+- ✅ **Wide Mode** - Board expansion WORKING
+- ✅ **Bomb** - 3x3 explosion effect WORKING
+- ✅ **Magic Block** - Smart fill WORKING
 
 ### Test These Behaviors
 - [ ] Multiple Score Boosts stack (score × 4)?
@@ -131,6 +129,11 @@ If you select these, they'll be activated but won't do anything yet.
 - [ ] Swap Hold with empty next piece queue?
 - [ ] Preview+ with less than 3 pieces in queue?
 - [ ] Shield with no blocks on board?
+- [ ] Teleport to invalid position (should not work)
+- [ ] Wide Mode ending while piece is in extended area
+- [ ] Reverse Gravity with hard drop (should go to ceiling)
+- [ ] Bomb at board edges (should not crash)
+- [ ] Magic Block with no gaps (should still work)
 
 ## 🎮 Keyboard Controls Reminder
 - **Arrow Keys**: Move/rotate piece
