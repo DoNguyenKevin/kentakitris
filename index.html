@@ -142,6 +142,48 @@
         </div>
     </div>
 
+    <!-- Difficulty Selection Modal (hiện khi bắt đầu game) -->
+    <div id="difficulty-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hidden">
+        <div class="bg-gradient-to-b from-blue-900 to-gray-900 border-4 border-blue-500 p-8 max-w-2xl w-full mx-4 pixel-border">
+            <h2 class="text-3xl font-bold text-blue-300 mb-2 text-center animate-pulse">⚔️ CHỌN ĐỘ KHÓ ⚔️</h2>
+            <p class="text-center text-yellow-400 text-lg mb-6">Select Your Difficulty!</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- Easy -->
+                <button data-difficulty="easy" class="difficulty-button bg-green-700 hover:bg-green-600 border-2 border-green-500 p-6 rounded-lg text-left transition-all">
+                    <div class="text-2xl font-bold text-green-300 mb-2">1️⃣ DỄ (Easy)</div>
+                    <div class="text-sm text-gray-300">Cho người mới bắt đầu</div>
+                    <div class="text-xs text-gray-400 mt-2">Tốc độ chậm, dễ điều khiển</div>
+                </button>
+
+                <!-- Normal -->
+                <button data-difficulty="normal" class="difficulty-button bg-blue-700 hover:bg-blue-600 border-2 border-blue-500 p-6 rounded-lg text-left transition-all">
+                    <div class="text-2xl font-bold text-blue-300 mb-2">2️⃣ BÌNH THƯỜNG (Normal)</div>
+                    <div class="text-sm text-gray-300">Cho người có chút kinh nghiệm</div>
+                    <div class="text-xs text-gray-400 mt-2">Tốc độ tiêu chuẩn</div>
+                </button>
+
+                <!-- Hard -->
+                <button data-difficulty="hard" class="difficulty-button bg-orange-700 hover:bg-orange-600 border-2 border-orange-500 p-6 rounded-lg text-left transition-all">
+                    <div class="text-2xl font-bold text-orange-300 mb-2">3️⃣ KHÓ (Hard)</div>
+                    <div class="text-sm text-gray-300">Dành cho người nhiều kinh nghiệm</div>
+                    <div class="text-xs text-gray-400 mt-2">⚡ Có khối năng lượng nguy hiểm!</div>
+                </button>
+
+                <!-- Impossible -->
+                <button data-difficulty="impossible" class="difficulty-button bg-red-700 hover:bg-red-600 border-2 border-red-500 p-6 rounded-lg text-left transition-all">
+                    <div class="text-2xl font-bold text-red-300 mb-2">4️⃣ IMPOSSIBLE</div>
+                    <div class="text-sm text-gray-300">Không ai thắng được!</div>
+                    <div class="text-xs text-gray-400 mt-2">💥 Khối năng lượng có thể nổ!</div>
+                </button>
+            </div>
+
+            <div class="text-center text-gray-500 text-xs">
+                <p>💡 Mẹo: Bắt đầu với độ khó DỄ nếu bạn là người mới!</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Settings Modal -->
     <div id="settings-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
         <div class="bg-gray-900 border-4 border-blue-500 p-8 max-w-md w-full mx-4 pixel-border">
