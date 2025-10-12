@@ -49,6 +49,48 @@ const SCORE_PER_LINE = 10;
 const LINES_PER_LEVEL = 10;
 const INITIAL_DROP_DELAY = 1000; // ms
 
+// --- DIFFICULTY SYSTEM ---
+let currentDifficulty = null; // Độ khó hiện tại
+
+const DIFFICULTY_CONFIG = {
+    easy: {
+        name: 'Dễ (Easy)',
+        dropSpeedMultiplier: 1.5,        // Chậm hơn 1.5 lần
+        hasEnergyBlocks: false
+    },
+    normal: {
+        name: 'Bình thường (Normal)',
+        dropSpeedMultiplier: 1.0,        // Tốc độ chuẩn
+        hasEnergyBlocks: false
+    },
+    hard: {
+        name: 'Khó (Hard)',
+        dropSpeedMultiplier: 0.8,        // Nhanh hơn 1.25 lần
+        hasEnergyBlocks: true,
+        energyBlockConfig: {
+            spawnChance: 0.1,            // 10% cơ hội xuất hiện
+            dropSpeed: 3000,             // Rơi chậm (3 giây/ô)
+            color: 'energy-block'        // Class CSS riêng
+        }
+    },
+    impossible: {
+        name: 'Impossible',
+        dropSpeedMultiplier: 0.6,        // Nhanh hơn 1.67 lần
+        hasEnergyBlocks: true,
+        energyBlockConfig: {
+            spawnChance: 0.2,            // 20% cơ hội xuất hiện
+            dropSpeed: 800,              // Rơi cực nhanh (0.8 giây/ô)
+            color: 'energy-block-impossible',
+            canExplode: true,            // Có thể nổ
+            explosionDistance: 100,      // Khoảng cách chuột gần (pixels)
+            freezeDuration: 3000         // Đóng băng chuột 3 giây
+        }
+    }
+};
+
+let energyBlocks = []; // Danh sách khối năng lượng đang rơi
+let isMouseFrozen = false; // Chuột có bị đóng băng không
+
 // --- POWER-UPS/SKILLS SYSTEM ---
 const POWERUPS = {
     // Offensive Skills
@@ -844,7 +886,12 @@ function hasPowerup(powerupId) {
  * Get current drop delay (affected by SLOW_TIME)
  */
 function getCurrentDropDelay() {
-    let delay = INITIAL_DROP_DELAY / level;
+    // Get difficulty multiplier (default to 1.0 if no difficulty selected)
+    const difficultyMultiplier = (currentDifficulty && DIFFICULTY_CONFIG[currentDifficulty]) 
+        ? DIFFICULTY_CONFIG[currentDifficulty].dropSpeedMultiplier 
+        : 1.0;
+    
+    let delay = (INITIAL_DROP_DELAY * difficultyMultiplier) / level;
     
     if (hasPowerup('SLOW_TIME')) {
         delay *= 2; // 50% slower
@@ -1282,11 +1329,19 @@ function restartDropInterval() {
 function startGame() {
     if (isPlaying) return;
 
+    // Show difficulty modal if not selected yet
+    if (!currentDifficulty) {
+        showDifficultyModal();
+        return;
+    }
+
     // Reset state
     createBoard();
     score = 0;
     lines = 0;
     level = 1;
+    energyBlocks = [];
+    isMouseFrozen = false;
     updateStats();
 
     // Setup initial pieces
@@ -1296,13 +1351,18 @@ function startGame() {
 
     isPlaying = true;
     isPaused = false;
-    statusEl.textContent = 'GAME ON!';
+    statusEl.textContent = `GAME ON! (${DIFFICULTY_CONFIG[currentDifficulty].name})`;
     startButton.classList.add('hidden');
     pauseButton.classList.remove('hidden');
 
     drawBoard();
     startDropInterval();
     attachInputHandlers();
+    
+    // Initialize mouse tracking for Impossible mode
+    if (currentDifficulty === 'impossible') {
+        initMouseTracking();
+    }
 }
 
 /**
@@ -1589,6 +1649,149 @@ settingsModal.addEventListener('click', (e) => {
         hideSettingsModal();
     }
 });
+
+// --- DIFFICULTY MODAL ---
+const difficultyModal = document.getElementById('difficulty-modal');
+
+function showDifficultyModal() {
+    difficultyModal.classList.remove('hidden');
+}
+
+function hideDifficultyModal() {
+    difficultyModal.classList.add('hidden');
+}
+
+function selectDifficulty(difficulty) {
+    currentDifficulty = difficulty;
+    localStorage.setItem('gameDifficulty', difficulty);
+    hideDifficultyModal();
+    
+    // Start the game after selecting difficulty
+    // Reset state
+    createBoard();
+    score = 0;
+    lines = 0;
+    level = 1;
+    energyBlocks = [];
+    isMouseFrozen = false;
+    updateStats();
+
+    // Setup initial pieces
+    currentPiece = getRandomPiece();
+    nextPiece = getRandomPiece();
+    drawNextPiece();
+
+    isPlaying = true;
+    isPaused = false;
+    statusEl.textContent = `GAME ON! (${DIFFICULTY_CONFIG[currentDifficulty].name})`;
+    startButton.classList.add('hidden');
+    pauseButton.classList.remove('hidden');
+
+    drawBoard();
+    startDropInterval();
+    attachInputHandlers();
+    
+    // Initialize mouse tracking for Impossible mode
+    if (currentDifficulty === 'impossible') {
+        initMouseTracking();
+    }
+}
+
+// Difficulty selection handlers
+const difficultyButtons = document.querySelectorAll('.difficulty-button');
+difficultyButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const difficulty = button.dataset.difficulty;
+        selectDifficulty(difficulty);
+    });
+});
+
+// Load saved difficulty if available
+const savedDifficulty = localStorage.getItem('gameDifficulty');
+if (savedDifficulty) {
+    currentDifficulty = savedDifficulty;
+}
+
+// Mouse tracking for Impossible mode
+function initMouseTracking() {
+    const boardEl = document.getElementById('game-board');
+    if (!boardEl) return;
+    
+    boardEl.addEventListener('mousemove', (e) => {
+        if (isMouseFrozen || currentDifficulty !== 'impossible') return;
+        checkMouseProximity(e.clientX, e.clientY);
+    });
+}
+
+function checkMouseProximity(mouseX, mouseY) {
+    if (currentDifficulty !== 'impossible' || !DIFFICULTY_CONFIG[currentDifficulty].hasEnergyBlocks) {
+        return;
+    }
+    
+    const config = DIFFICULTY_CONFIG[currentDifficulty].energyBlockConfig;
+    if (!config.canExplode) return;
+    
+    const boardEl = document.getElementById('game-board');
+    if (!boardEl) return;
+    
+    const boardRect = boardEl.getBoundingClientRect();
+    const cellWidth = boardRect.width / BOARD_WIDTH;
+    const cellHeight = boardRect.height / BOARD_HEIGHT;
+    
+    // Check each energy block
+    for (let i = energyBlocks.length - 1; i >= 0; i--) {
+        const block = energyBlocks[i];
+        
+        const blockX = boardRect.left + block.x * cellWidth + cellWidth / 2;
+        const blockY = boardRect.top + block.y * cellHeight + cellHeight / 2;
+        
+        const distance = Math.sqrt(
+            Math.pow(mouseX - blockX, 2) + 
+            Math.pow(mouseY - blockY, 2)
+        );
+        
+        if (distance < config.explosionDistance) {
+            explodeEnergyBlock(i);
+            return;
+        }
+    }
+}
+
+function explodeEnergyBlock(index) {
+    const block = energyBlocks[index];
+    if (!block) return;
+    
+    const config = DIFFICULTY_CONFIG[currentDifficulty].energyBlockConfig;
+    
+    // Remove energy block
+    energyBlocks.splice(index, 1);
+    
+    // Freeze mouse
+    freezeMouse(config.freezeDuration);
+}
+
+function freezeMouse(duration) {
+    if (isMouseFrozen) return;
+    
+    isMouseFrozen = true;
+    document.body.classList.add('mouse-frozen');
+    
+    // Show message
+    const originalText = statusEl.textContent;
+    statusEl.textContent = '🧊 MOUSE FROZEN! 🧊';
+    statusEl.style.color = '#00ffff';
+    
+    setTimeout(() => {
+        statusEl.textContent = originalText;
+        statusEl.style.color = '';
+    }, duration);
+    
+    // Unfreeze
+    setTimeout(() => {
+        isMouseFrozen = false;
+        document.body.classList.remove('mouse-frozen');
+    }, duration);
+}
 
 // Initial setup for the board display (empty)
 createBoard();

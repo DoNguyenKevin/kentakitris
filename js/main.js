@@ -49,12 +49,17 @@ setGameCallbacks(gameTick, endGame);
 function startGame() {
     if (gameState.isPlaying) return;
 
-    // Show difficulty modal if not already selected
-    if (!difficulty || difficulty === 'normal') {
+    console.log('startGame called, difficulty:', difficulty);
+    
+    // Show difficulty modal if not selected yet
+    if (!difficulty) {
+        console.log('Showing difficulty modal');
         showDifficultyModal();
         return;
     }
 
+    console.log('Starting game with difficulty:', difficulty);
+    
     // Reset state
     resetGameState();
     updateStats(0, 1);

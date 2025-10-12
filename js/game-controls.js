@@ -73,8 +73,10 @@ export function gameTick(forceLock = false) {
  * Starts the piece dropping interval.
  */
 export function startDropInterval() {
-    // Get difficulty multiplier
-    const difficultyMultiplier = DIFFICULTY_CONFIG[difficulty]?.dropSpeedMultiplier || 1.0;
+    // Get difficulty multiplier (default to 1.0 if no difficulty selected)
+    const difficultyMultiplier = (difficulty && DIFFICULTY_CONFIG[difficulty]) 
+        ? DIFFICULTY_CONFIG[difficulty].dropSpeedMultiplier 
+        : 1.0;
     const dropDelay = (INITIAL_DROP_DELAY * difficultyMultiplier) / level;
     
     if (dropIntervalId) clearInterval(dropIntervalId);

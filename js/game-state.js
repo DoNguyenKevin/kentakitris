@@ -40,7 +40,7 @@ export let isPaused = false;
 export let dropIntervalId = null;
 
 // ✅ difficulty = độ khó đã chọn
-export let difficulty = 'normal'; // Mặc định là bình thường
+export let difficulty = null; // Chưa chọn độ khó
 
 // ✅ energyBlocks = các khối năng lượng đang rơi (cho Hard/Impossible)
 export let energyBlocks = [];
