@@ -1838,9 +1838,16 @@ function updateEnergyBlocks() {
             block.y++;
             block.lastDropTime = currentTime;
             
-            // Check if reached bottom or collision
-            if (block.y >= BOARD_HEIGHT - 1 || (board[block.y] && board[block.y][block.x] !== 0)) {
-                // Game over when energy block hits bottom or other blocks
+            // Check if reached bottom first (bounds check)
+            if (block.y >= BOARD_HEIGHT) {
+                // Game over when energy block hits bottom
+                endGame();
+                return;
+            }
+            
+            // Then check collision with existing blocks
+            if (board[block.y] && board[block.y][block.x] !== 0) {
+                // Game over when energy block hits other blocks
                 endGame();
                 return;
             }
@@ -1861,6 +1868,13 @@ function drawEnergyBlocks() {
         const cell = boardEl.children[index];
         
         if (cell && !cell.classList.contains('current-piece-cell')) {
+            // Remove any existing color classes first to avoid artifacts
+            COLORS.forEach(color => {
+                if (color) cell.classList.remove(color);
+            });
+            cell.classList.remove('energy-block', 'energy-block-impossible');
+            
+            // Add energy block styling
             cell.classList.add('block', block.color);
         }
     });
