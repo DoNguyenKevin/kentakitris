@@ -1236,6 +1236,9 @@ function rotatePiece() {
 function gameTick(forceLock = false) {
     if (!isPlaying || isPaused) return;
 
+    // Update energy blocks (Hard/Impossible mode)
+    updateEnergyBlocks();
+
     // 1. Try to move down (or up if Reverse Gravity is active)
     // Thử di chuyển xuống (hoặc lên nếu Reverse Gravity đang hoạt động)
     let moved;
@@ -1249,6 +1252,9 @@ function gameTick(forceLock = false) {
     if (!moved || forceLock) {
         lockPiece();
         clearLines();
+
+        // Try to spawn energy block (Hard/Impossible mode)
+        trySpawnEnergyBlock();
 
         // 3. Spawn next piece
         currentPiece = nextPiece;
@@ -1280,6 +1286,9 @@ function gameTick(forceLock = false) {
         }
         drawBoard(); // Draw the newly spawned piece
     }
+    
+    // Draw energy blocks
+    drawEnergyBlocks();
 }
 
 /**
@@ -1791,6 +1800,70 @@ function freezeMouse(duration) {
         isMouseFrozen = false;
         document.body.classList.remove('mouse-frozen');
     }, duration);
+}
+
+// Energy block helper functions
+function trySpawnEnergyBlock() {
+    const config = DIFFICULTY_CONFIG[currentDifficulty];
+    if (!config || !config.hasEnergyBlocks) {
+        return;
+    }
+    
+    const energyConfig = config.energyBlockConfig;
+    if (Math.random() < energyConfig.spawnChance) {
+        const newBlock = {
+            x: Math.floor(Math.random() * BOARD_WIDTH),
+            y: 0,
+            color: energyConfig.color,
+            dropSpeed: energyConfig.dropSpeed,
+            lastDropTime: Date.now()
+        };
+        energyBlocks.push(newBlock);
+    }
+}
+
+function updateEnergyBlocks() {
+    if (!currentDifficulty || !DIFFICULTY_CONFIG[currentDifficulty].hasEnergyBlocks) {
+        return;
+    }
+    
+    const currentTime = Date.now();
+    
+    for (let i = energyBlocks.length - 1; i >= 0; i--) {
+        const block = energyBlocks[i];
+        const config = DIFFICULTY_CONFIG[currentDifficulty].energyBlockConfig;
+        
+        // Check if it's time to drop
+        if (currentTime - block.lastDropTime >= config.dropSpeed) {
+            block.y++;
+            block.lastDropTime = currentTime;
+            
+            // Check if reached bottom or collision
+            if (block.y >= BOARD_HEIGHT - 1 || (board[block.y] && board[block.y][block.x] !== 0)) {
+                // Game over when energy block hits bottom or other blocks
+                endGame();
+                return;
+            }
+        }
+    }
+}
+
+function drawEnergyBlocks() {
+    if (!currentDifficulty || !DIFFICULTY_CONFIG[currentDifficulty].hasEnergyBlocks) {
+        return;
+    }
+    
+    const boardEl = document.getElementById('game-board');
+    if (!boardEl) return;
+    
+    energyBlocks.forEach(block => {
+        const index = block.y * BOARD_WIDTH + block.x;
+        const cell = boardEl.children[index];
+        
+        if (cell && !cell.classList.contains('current-piece-cell')) {
+            cell.classList.add('block', block.color);
+        }
+    });
 }
 
 // Initial setup for the board display (empty)
