@@ -39,6 +39,15 @@ export let isPaused = false;
 // Dùng để dừng/khởi động lại timer khi cần
 export let dropIntervalId = null;
 
+// ✅ difficulty = độ khó đã chọn
+export let difficulty = null; // Chưa chọn độ khó
+
+// ✅ energyBlocks = các khối năng lượng đang rơi (cho Hard/Impossible)
+export let energyBlocks = [];
+
+// ✅ isMouseFrozen = chuột có bị đóng băng không (cho Impossible)
+export let isMouseFrozen = false;
+
 // --- HÀM TẠO VÀ QUẢN LÝ ---
 
 /**
@@ -75,6 +84,8 @@ export function resetGameState() {
     nextPiece = null;
     isPlaying = false;
     isPaused = false;
+    energyBlocks = [];
+    isMouseFrozen = false;
     if (dropIntervalId) {
         clearInterval(dropIntervalId); // Dừng timer
     }
@@ -140,6 +151,34 @@ export function setIsPaused(value) {
  */
 export function setDropIntervalId(id) {
     dropIntervalId = id;
+}
+
+/**
+ * Cập nhật độ khó
+ */
+export function setDifficulty(newDifficulty) {
+    difficulty = newDifficulty;
+}
+
+/**
+ * Thêm khối năng lượng
+ */
+export function addEnergyBlock(block) {
+    energyBlocks.push(block);
+}
+
+/**
+ * Xóa khối năng lượng
+ */
+export function removeEnergyBlock(index) {
+    energyBlocks.splice(index, 1);
+}
+
+/**
+ * Đặt trạng thái đóng băng chuột
+ */
+export function setIsMouseFrozen(value) {
+    isMouseFrozen = value;
 }
 
 // ❓ Câu hỏi: Tại sao không thay đổi biến trực tiếp?

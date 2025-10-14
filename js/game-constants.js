@@ -33,6 +33,55 @@ export const LINES_PER_LEVEL = 10;
 // Try it: Đổi thành 2000 để chơi chậm hơn, hoặc 500 để chơi nhanh hơn!
 export const INITIAL_DROP_DELAY = 1000; // ms (milliseconds = phần ngàn giây)
 
+// --- ĐỘ KHÓ (DIFFICULTY LEVELS) ---
+
+// ✅ Các cấp độ khó
+export const DIFFICULTY_LEVELS = {
+    EASY: 'easy',           // Dễ: cho người mới bắt đầu
+    NORMAL: 'normal',       // Bình thường: cho người có chút kinh nghiệm
+    HARD: 'hard',           // Khó: có khối năng lượng nguy hiểm
+    IMPOSSIBLE: 'impossible' // Impossible: khối năng lượng cực nguy hiểm
+};
+
+// ✅ Cấu hình cho từng độ khó
+export const DIFFICULTY_CONFIG = {
+    [DIFFICULTY_LEVELS.EASY]: {
+        name: 'Dễ (Easy)',
+        dropSpeedMultiplier: 1.5,        // Chậm hơn 1.5 lần
+        hasEnergyBlocks: false,
+        energyBlockConfig: null
+    },
+    [DIFFICULTY_LEVELS.NORMAL]: {
+        name: 'Bình thường (Normal)',
+        dropSpeedMultiplier: 1.0,        // Tốc độ chuẩn
+        hasEnergyBlocks: false,
+        energyBlockConfig: null
+    },
+    [DIFFICULTY_LEVELS.HARD]: {
+        name: 'Khó (Hard)',
+        dropSpeedMultiplier: 0.8,        // Nhanh hơn 1.25 lần
+        hasEnergyBlocks: true,
+        energyBlockConfig: {
+            spawnChance: 0.1,            // 10% cơ hội xuất hiện
+            dropSpeed: 3000,             // Rơi chậm (3 giây/ô)
+            color: 'energy-block'        // Class CSS riêng
+        }
+    },
+    [DIFFICULTY_LEVELS.IMPOSSIBLE]: {
+        name: 'Impossible',
+        dropSpeedMultiplier: 0.6,        // Nhanh hơn 1.67 lần
+        hasEnergyBlocks: true,
+        energyBlockConfig: {
+            spawnChance: 0.2,            // 20% cơ hội xuất hiện
+            dropSpeed: 800,              // Rơi cực nhanh (0.8 giây/ô)
+            color: 'energy-block-impossible',
+            canExplode: true,            // Có thể nổ
+            explosionDistance: 100,      // Khoảng cách chuột gần (pixels)
+            freezeDuration: 3000         // Đóng băng chuột 3 giây
+        }
+    }
+};
+
 // --- HÌNH DẠNG CÁC MẢNH (TETROMINO SHAPES) ---
 
 // ✅ Mỗi mảnh là một mảng 2 chiều (như bàn cờ mini)

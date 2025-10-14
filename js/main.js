@@ -7,8 +7,10 @@ import {
     setCurrentPiece,
     setNextPiece,
     setIsPlaying,
+    setDifficulty,
     score,
-    level
+    level,
+    difficulty
 } from './game-state.js';
 import { getRandomPiece } from './game-pieces.js';
 import { drawBoard, drawNextPiece, updateStats } from './game-board.js';
@@ -20,6 +22,7 @@ import {
     togglePause,
     setGameCallbacks
 } from './game-controls.js';
+import { initMouseTracking } from './energy-blocks.js';
 
 // --- DOM ELEMENTS ---
 const startButton = document.getElementById('start-button');
@@ -31,6 +34,7 @@ const settingsButton = document.getElementById('settings-button');
 const settingsModal = document.getElementById('settings-modal');
 const settingsCloseBtn = document.getElementById('settings-close-btn');
 const showSpeedToggle = document.getElementById('show-speed-toggle');
+const difficultyModal = document.getElementById('difficulty-modal');
 
 // Make currentPiece available globally for game-controls
 import * as gameState from './game-state.js';
@@ -45,6 +49,17 @@ setGameCallbacks(gameTick, endGame);
 function startGame() {
     if (gameState.isPlaying) return;
 
+    console.log('startGame called, difficulty:', difficulty);
+    
+    // Show difficulty modal if not selected yet
+    if (!difficulty) {
+        console.log('Showing difficulty modal');
+        showDifficultyModal();
+        return;
+    }
+
+    console.log('Starting game with difficulty:', difficulty);
+    
     // Reset state
     resetGameState();
     updateStats(0, 1);
@@ -139,6 +154,57 @@ function saveSettings() {
     updateStats(score, level);
 }
 
+// --- DIFFICULTY MODAL FUNCTIONS ---
+
+/**
+ * Shows the difficulty selection modal
+ */
+function showDifficultyModal() {
+    difficultyModal.classList.remove('hidden');
+}
+
+/**
+ * Hides the difficulty selection modal
+ */
+function hideDifficultyModal() {
+    difficultyModal.classList.add('hidden');
+}
+
+/**
+ * Handles difficulty selection
+ */
+function selectDifficulty(selectedDifficulty) {
+    setDifficulty(selectedDifficulty);
+    localStorage.setItem('gameDifficulty', selectedDifficulty);
+    hideDifficultyModal();
+    
+    // Start the game after selecting difficulty
+    // Reset state
+    resetGameState();
+    updateStats(0, 1);
+
+    // Setup initial pieces
+    const firstPiece = getRandomPiece();
+    const nextPieceValue = getRandomPiece();
+    setCurrentPiece(firstPiece);
+    setNextPiece(nextPieceValue);
+    
+    // Update window reference
+    window.currentPiece = firstPiece;
+    
+    drawNextPiece();
+
+    setIsPlaying(true);
+    statusEl.textContent = `GAME ON! (${selectedDifficulty.toUpperCase()})`;
+    startButton.classList.add('hidden');
+    pauseButton.classList.remove('hidden');
+
+    drawBoard();
+    startDropInterval();
+    attachInputHandlers();
+    initMouseTracking(); // Initialize mouse tracking for Impossible mode
+}
+
 // --- INITIALIZATION ---
 async function init() {
     // Initialize Firebase
@@ -176,6 +242,21 @@ async function init() {
             hideSettingsModal();
         }
     });
+
+    // Difficulty selection handlers
+    const difficultyButtons = document.querySelectorAll('.difficulty-button');
+    difficultyButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const selectedDifficulty = button.dataset.difficulty;
+            selectDifficulty(selectedDifficulty);
+        });
+    });
+
+    // Load saved difficulty if available
+    const savedDifficulty = localStorage.getItem('gameDifficulty');
+    if (savedDifficulty) {
+        setDifficulty(savedDifficulty);
+    }
 
     // Initial setup for the board display (empty)
     createBoard();
