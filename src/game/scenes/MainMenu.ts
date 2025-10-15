@@ -1,33 +1,69 @@
+// src/game/scenes/MainMenu.ts
+// ======================================================
+// ✅ MainMenu Scene - Menu chính của game
+// 
+// Scene này hiển thị:
+// - Tiêu đề game
+// - Nút "Click to Start"
+// - Hướng dẫn điều khiển
+// 
+// Khi click chuột → Chuyển sang Game scene
+// 
+// 🎬 Menu = Màn hình đầu tiên người chơi thấy
+// ======================================================
+
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 
+/**
+ * ✅ MainMenu Scene - Menu chính
+ * 
+ * Scene này chờ người chơi click để bắt đầu chơi
+ */
 export class MainMenu extends Scene
 {
+    // 📹 Camera
     camera: Phaser.Cameras.Scene2D.Camera;
-    logoText: Phaser.GameObjects.Text;
-    startText: Phaser.GameObjects.Text;
+    
+    // 📝 Text objects
+    logoText: Phaser.GameObjects.Text;   // Tiêu đề game
+    startText: Phaser.GameObjects.Text;  // Nút start (nhấp nháy)
 
     constructor ()
     {
         super('MainMenu');
     }
 
+    /**
+     * ✅ create() - Tạo menu
+     * 
+     * Các bước:
+     * 1. Đặt màu nền
+     * 2. Tạo tiêu đề game (lớn, vàng)
+     * 3. Tạo subtitle
+     * 4. Tạo nút "Click to Start" (nhấp nháy)
+     * 5. Hiển thị hướng dẫn phím
+     * 6. Lắng nghe click chuột
+     * 
+     * 💡 Tween = Animation (hiệu ứng chuyển động)
+     */
     create ()
     {
+        // 📹 Thiết lập camera và màu nền
         this.camera = this.cameras.main
-        this.camera.setBackgroundColor(0x0d0d1a);
+        this.camera.setBackgroundColor(0x0d0d1a); // Xanh đen
 
-        // Title
+        // 🏆 Tiêu đề game
         this.logoText = this.add.text(512, 200, '🎮 KENTAKITRIS 🎮', {
             fontFamily: 'Arial Black', 
             fontSize: '64px', 
-            color: '#FFD700',
-            stroke: '#000000', 
-            strokeThickness: 8,
+            color: '#FFD700',      // Màu vàng
+            stroke: '#000000',     // Viền đen
+            strokeThickness: 8,    // Độ dày viền
             align: 'center'
-        }).setOrigin(0.5);
+        }).setOrigin(0.5); // Căn giữa
 
-        // Subtitle
+        // 📝 Subtitle (dòng chữ nhỏ)
         this.add.text(512, 300, 'A Tetris Game with Phaser', {
             fontFamily: 'Arial', 
             fontSize: '24px', 
@@ -35,24 +71,25 @@ export class MainMenu extends Scene
             align: 'center'
         }).setOrigin(0.5);
 
-        // Start button
+        // 🎮 Nút "Click to Start"
         this.startText = this.add.text(512, 400, 'Click to Start', {
             fontFamily: 'Arial', 
             fontSize: '32px', 
-            color: '#00FF88',
+            color: '#00FF88',  // Màu xanh lá
             align: 'center'
         }).setOrigin(0.5);
 
-        // Make start text blink
+        // ✨ Hiệu ứng nhấp nháy (blink)
+        // Làm text mờ dần rồi sáng lại, lặp mãi
         this.tweens.add({
-            targets: this.startText,
-            alpha: 0.3,
-            duration: 1000,
-            yoyo: true,
-            repeat: -1
+            targets: this.startText,  // Áp dụng cho startText
+            alpha: 0.3,               // Độ trong suốt giảm xuống 30%
+            duration: 1000,           // Trong 1 giây
+            yoyo: true,               // Quay lại (mờ → sáng → mờ...)
+            repeat: -1                // Lặp mãi (-1 = vô hạn)
         });
 
-        // Controls info
+        // 📖 Hướng dẫn phím
         this.add.text(512, 550, 'Controls:', {
             fontFamily: 'Arial', 
             fontSize: '20px', 
@@ -63,23 +100,33 @@ export class MainMenu extends Scene
         this.add.text(512, 590, '← → : Move  |  ↑ : Rotate  |  SPACE : Drop', {
             fontFamily: 'Arial', 
             fontSize: '18px', 
-            color: '#AAAAAA',
+            color: '#AAAAAA',  // Màu xám
             align: 'center'
         }).setOrigin(0.5);
 
-        // Click to start
+        // 🖱️ Lắng nghe click chuột (chỉ 1 lần)
+        // once = Chỉ lắng nghe 1 lần (không lặp)
         this.input.once('pointerdown', () => {
-            this.changeScene();
+            this.changeScene(); // Chuyển sang Game scene
         });
 
+        // 📡 Thông báo: Scene sẵn sàng!
         EventBus.emit('current-scene-ready', this);
     }
     
+    /**
+     * ✅ changeScene() - Chuyển sang Game scene
+     * 
+     * Được gọi khi người chơi click chuột
+     */
     changeScene ()
     {
-        this.scene.start('Game');
+        this.scene.start('Game'); // Bắt đầu Game scene
     }
 
+    /**
+     * 🗑️ moveLogo() - Legacy method (không dùng nữa)
+     */
     moveLogo (reactCallback: ({ x, y }: { x: number, y: number }) => void)
     {
         // Legacy method - no longer used
