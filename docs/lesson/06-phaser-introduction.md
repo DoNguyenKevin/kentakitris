@@ -34,6 +34,11 @@ this.add.text(100, 100, 'Hello!'); // Dễ dàng!
 File: `src/game/main.ts`
 
 ```typescript
+// Import các Scene classes
+import { Boot } from './scenes/Boot';
+import { Preloader } from './scenes/Preloader';
+// ... (import các scene khác)
+
 const config = {
     width: 1024,      // Chiều rộng game
     height: 768,      // Chiều cao game
@@ -43,6 +48,7 @@ const config = {
 ```
 
 **Giải thích:**
+- Phải import các Scene classes trước khi dùng!
 - `width`, `height` = Kích thước cửa sổ game
 - `parent` = ID của HTML element chứa game
 - `scene` = Danh sách các màn hình (scenes)
@@ -400,8 +406,16 @@ Bạn đã học:
 // Log trong Console
 console.log('Debug:', this.score);
 
-// Hiển thị FPS
-this.add.text(10, 10, 'FPS: ' + this.game.loop.actualFps);
+// Hiển thị FPS (Frames Per Second)
+// Math.round() làm tròn số để dễ đọc hơn
+const fpsText = this.add.text(10, 10, '', { fontSize: '16px' });
+this.time.addEvent({
+    delay: 100,  // Cập nhật mỗi 0.1 giây
+    loop: true,
+    callback: () => {
+        fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
+    }
+});
 ```
 
 ### Best Practices
