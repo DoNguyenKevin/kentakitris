@@ -1,7 +1,7 @@
 {
   "name": "kentakitris",
   "description": "A Phaser 3 Next.js project template that demonstrates Next.js with React communication and uses Vite for bundling.",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/phaserjs/template-nextjs.git"
