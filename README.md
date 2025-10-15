@@ -1,11 +1,26 @@
 # 🎮 Keltris - Pixel Tetris Game
 
-**Tetris game với Firebase Realtime Database Leaderboard + Name Input Feature**
+**Tetris game with Phaser 3 + Firebase Realtime Database Leaderboard + Name Input Feature**
 
-![Version](https://img.shields.io/badge/version-2.0-blue)
+![Version](https://img.shields.io/badge/version-2.2-blue)
+![Phaser](https://img.shields.io/badge/phaser-3.90.0-blueviolet)
 ![Firebase](https://img.shields.io/badge/firebase-realtime_database-orange)
 ![Status](https://img.shields.io/badge/status-ready-green)
 ![Educational](https://img.shields.io/badge/educational-kids_7--12-brightgreen)
+
+---
+
+## 🎉 New: Phaser Implementation!
+
+Kentakitris is now powered by **Phaser 3**, a professional HTML5 game framework! This brings:
+
+- 🚀 **Better Performance** - Smooth 60 FPS gameplay
+- 🎨 **Clean Architecture** - Modular scene-based design
+- 🔧 **TypeScript Support** - Type-safe code with better IDE support
+- 📦 **Optimized Build** - Smaller bundle size and faster loading
+- 🎮 **Professional Game Engine** - Industry-standard framework
+
+[📖 Read the Phaser Implementation Guide](docs/PHASER-IMPLEMENTATION.md)
 
 ---
 
@@ -92,6 +107,34 @@
 ---
 
 ## 🚀 Quick Start
+
+### Play the Game
+
+**Two ways to play Kentakitris:**
+
+#### Option 1: Phaser Version (Recommended) 🎮
+```bash
+npm install
+npm run dev-nolog
+```
+Visit `http://localhost:8080` and enjoy the Phaser-powered experience!
+
+**Features:**
+- Modern game engine architecture
+- Smooth 60 FPS gameplay
+- Professional scene management
+- TypeScript support
+
+#### Option 2: Classic Vanilla JS Version
+Open `src/index.html` directly in your browser for the original educational version.
+
+**Features:**
+- Simple, educational code
+- Easy to understand for beginners
+- Vietnamese comments
+- Step-by-step lessons
+
+---
 
 ### 1. Setup Firebase (5 phút)
 
@@ -328,11 +371,12 @@ Bình thường:          Wide Mode:
 ## 🏗️ Tech Stack
 
 ### Frontend
-- **HTML5** - Structure
+- **Phaser 3.90.0** - Professional HTML5 game engine 🎮
+- **Next.js 15.5.5** - React framework for web apps
+- **TypeScript 5** - Type-safe JavaScript
+- **HTML5 Canvas** - High-performance rendering
 - **CSS3** - Pixel art styling, animations
-- **JavaScript (ES6+)** - Game logic, ES6 modules
-- **Tailwind CSS** - Utility classes (via CDN)
-- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Utility classes (via CDN) [Classic version]
 
 ### Backend
 - **Firebase Realtime Database** - Leaderboard data
@@ -340,13 +384,20 @@ Bình thường:          Wide Mode:
 - **Firebase Security Rules** - Access control
 
 ### Build & Deployment
-- **Vite 5.x** - Fast build tool with HMR
+- **Next.js Build System** - Optimized production builds
 - **Vercel** - Recommended deployment platform
 - **Firebase Hosting** - Alternative deployment option
 
+### Game Architecture
+- **Scene-based design** - Clean separation of concerns
+- **Event Bus** - React ↔ Phaser communication
+- **Graphics API** - Programmatic rendering (no assets needed)
+- **Timer Events** - Consistent game loop
+
 ### Libraries
-- Minimal dependencies (Vite dev dependency only)
+- Minimal dependencies
 - Firebase SDK via CDN (runtime)
+- No external game assets required
 
 ---
 
@@ -517,6 +568,17 @@ localStorage.setItem('lastNameChangeDate', '2025-01-01');
 
 ## 🎉 Changelog
 
+### v2.2.0 (2025-10-15) - Phaser Implementation 🎮
+- 🚀 **MAJOR**: Migrated to Phaser 3 game engine
+- ⚡ Complete rewrite using TypeScript and scene-based architecture
+- 🎨 Programmatic graphics rendering (no external assets)
+- 📦 Optimized build with Next.js 15.5.5
+- 🎮 Professional game loop and state management
+- 📚 Comprehensive Phaser implementation documentation
+- 🏗️ Modular scene structure (Boot, Preloader, MainMenu, Game, GameOver)
+- ⚡ 60 FPS performance with smooth gameplay
+- 🔧 Type-safe codebase with TypeScript support
+
 ### v2.1.0 (2025-10-10)
 - 🚀 Added: Vite build system for development and production
 - 📦 Added: Vercel deployment configuration
@@ -614,6 +676,7 @@ Set these in your Vercel project settings:
 
 ## Quick Links
 
+- [🎮 Phaser Implementation Guide](docs/PHASER-IMPLEMENTATION.md) ⭐ NEW!
 - [🚀 Quick Setup (3 bước)](docs/SETUP-NHANH.md)
 - [📦 Vite + Vercel Deployment Guide](docs/VITE-VERCEL-DEPLOYMENT.md)
 - [✅ Checklist đầy đủ](docs/CHECKLIST.md)
@@ -623,9 +686,9 @@ Set these in your Vercel project settings:
 
 ---
 
-**Current Version**: 2.1.0  
-**Last Updated**: 2025-10-10  
-**Status**: ✅ Production Ready (Vite + Vercel)
+**Current Version**: 2.2.0 (Phaser Implementation)  
+**Last Updated**: 2025-10-15  
+**Status**: ✅ Production Ready (Phaser 3 + Next.js + TypeScript)
 
 # Phaser Next.js Template
 
