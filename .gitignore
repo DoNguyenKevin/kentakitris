@@ -13,3 +13,5 @@ repomix-output.xml
 .env
 .env.local
 .env.*.localtest-skills.js
+
+target/
