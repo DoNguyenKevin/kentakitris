@@ -1,8 +1,9 @@
-import { INITIAL_DROP_DELAY } from './game-constants.js';
+import { INITIAL_DROP_DELAY, DIFFICULTY_CONFIG } from './game-constants.js';
 import { 
     isPlaying, 
     isPaused, 
     level,
+    difficulty,
     dropIntervalId,
     setIsPaused,
     setDropIntervalId
@@ -11,6 +12,7 @@ import { movePiece, rotatePiece, hardDrop } from './game-logic.js';
 import { lockPiece } from './game-pieces.js';
 import { clearLines, spawnNextPiece } from './game-logic.js';
 import { drawBoard, drawNextPiece } from './game-board.js';
+import { updateEnergyBlocks, drawEnergyBlocks, trySpawnEnergyBlock } from './energy-blocks.js';
 
 let gameTickCallback = null;
 let endGameCallback = null;
@@ -30,6 +32,13 @@ export function setGameCallbacks(onGameTick, onEndGame) {
 export function gameTick(forceLock = false) {
     if (!isPlaying || isPaused) return;
 
+    // Update energy blocks
+    const energyBlockStatus = updateEnergyBlocks();
+    if (energyBlockStatus === 'GAME_OVER') {
+        if (endGameCallback) endGameCallback();
+        return;
+    }
+
     // 1. Try to move down
     const moved = movePiece(0, 1);
 
@@ -37,6 +46,9 @@ export function gameTick(forceLock = false) {
     if (!moved || forceLock) {
         lockPiece(window.currentPiece);
         clearLines();
+        
+        // Try to spawn energy block (Hard/Impossible mode)
+        trySpawnEnergyBlock();
         
         // Spawn next piece
         const canContinue = spawnNextPiece();
@@ -48,7 +60,12 @@ export function gameTick(forceLock = false) {
         }
         
         drawBoard();
+        drawEnergyBlocks(); // Draw energy blocks after board
         drawNextPiece();
+    } else {
+        // Redraw board to show energy blocks even during piece movement
+        drawBoard();
+        drawEnergyBlocks();
     }
 }
 
@@ -56,7 +73,12 @@ export function gameTick(forceLock = false) {
  * Starts the piece dropping interval.
  */
 export function startDropInterval() {
-    const dropDelay = INITIAL_DROP_DELAY / level;
+    // Get difficulty multiplier (default to 1.0 if no difficulty selected)
+    const difficultyMultiplier = (difficulty && DIFFICULTY_CONFIG[difficulty]) 
+        ? DIFFICULTY_CONFIG[difficulty].dropSpeedMultiplier 
+        : 1.0;
+    const dropDelay = (INITIAL_DROP_DELAY * difficultyMultiplier) / level;
+    
     if (dropIntervalId) clearInterval(dropIntervalId);
     const intervalId = setInterval(() => gameTickCallback && gameTickCallback(), dropDelay);
     setDropIntervalId(intervalId);
