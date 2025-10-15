@@ -3,53 +3,53 @@
   "description": "A Phaser 3 Next.js project template that demonstrates Next.js with React communication and uses Vite for bundling.",
   "version": "2.1.0",
   "repository": {
-        "type": "git",
-        "url": "git+https://github.com/phaserjs/template-nextjs.git"
-    },
-    "author": "Tôi Khôi, Tan và Đỗ Quyên",
-        "license": "MIT",
-    "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
-    "bugs": {
-        "url": "https://github.com/phaserjs/template-nextjs/issues"
-    },
-    "homepage": "https://github.com/phaserjs/template-nextjs#readme",
-    "keywords": [
-        "kentakitris",
-        "phaser",
-        "phaser3",
-        "next",
-        "nextjs",
-        "vite",
-        "typescript"
-    ],
+    "type": "git",
+    "url": "git+https://github.com/phaserjs/template-nextjs.git"
+  },
+  "author": "Tôi Khôi, Tan và Đỗ Quyên",
+  "license": "MIT",
+  "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
+  "bugs": {
+    "url": "https://github.com/phaserjs/template-nextjs/issues"
+  },
+  "homepage": "https://github.com/phaserjs/template-nextjs#readme",
+  "keywords": [
+    "kentakitris",
+    "phaser",
+    "phaser3",
+    "next",
+    "nextjs",
+    "vite",
+    "typescript"
+  ],
   "type": "module",
   "private": true,
   "scripts": {
     "preview": "vite preview --port 5173",
     "start": "vite",
-
     "dev": "node log.js dev & next dev -p 8080",
-        "build": "node log.js build & next build",
-        "dev-nolog": "next dev -p 8080",
-        "build-nolog": "next build"
+    "build": "node log.js build & next build",
+    "dev-nolog": "next dev -p 8080",
+    "build-nolog": "next build"
   },
   "dependencies": {
-        "next": "15.5.5",
-        "phaser": "^3.90.0",
-        "react": "19.0.0",
-        "react-dom": "19.0.0"
-    },
+    "next": "15.5.5",
+    "phaser": "^3.90.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.14",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "autoprefixer": "^10.4.21",
+    "eslint": "^9.37.0",
+    "eslint-config-next": "^15.5.5",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.14",
-    "vite": "^5.0.0",
-
-    "@types/node": "^20",
-        "@types/react": "^19",
-        "@types/react-dom": "^19",
-        "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^5.0.0"
   },
   "engines": {
     "node": ">=18"

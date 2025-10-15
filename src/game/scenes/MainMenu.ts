@@ -1,13 +1,11 @@
-import { GameObjects, Scene } from 'phaser';
-
 import { EventBus } from '../EventBus';
+import { Scene } from 'phaser';
 
 export class MainMenu extends Scene
 {
-    background: GameObjects.Image;
-    logo: GameObjects.Image;
-    title: GameObjects.Text;
-    logoTween: Phaser.Tweens.Tween | null;
+    camera: Phaser.Cameras.Scene2D.Camera;
+    logoText: Phaser.GameObjects.Text;
+    startText: Phaser.GameObjects.Text;
 
     constructor ()
     {
@@ -16,61 +14,74 @@ export class MainMenu extends Scene
 
     create ()
     {
-        this.background = this.add.image(512, 384, 'background');
+        this.camera = this.cameras.main
+        this.camera.setBackgroundColor(0x0d0d1a);
 
-        this.logo = this.add.image(512, 300, 'logo').setDepth(100);
-
-        this.title = this.add.text(512, 460, 'Main Menu', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
+        // Title
+        this.logoText = this.add.text(512, 200, '🎮 KENTAKITRIS 🎮', {
+            fontFamily: 'Arial Black', 
+            fontSize: '64px', 
+            color: '#FFD700',
+            stroke: '#000000', 
+            strokeThickness: 8,
             align: 'center'
-        }).setOrigin(0.5).setDepth(100);
+        }).setOrigin(0.5);
+
+        // Subtitle
+        this.add.text(512, 300, 'A Tetris Game with Phaser', {
+            fontFamily: 'Arial', 
+            fontSize: '24px', 
+            color: '#FFFFFF',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        // Start button
+        this.startText = this.add.text(512, 400, 'Click to Start', {
+            fontFamily: 'Arial', 
+            fontSize: '32px', 
+            color: '#00FF88',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        // Make start text blink
+        this.tweens.add({
+            targets: this.startText,
+            alpha: 0.3,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1
+        });
+
+        // Controls info
+        this.add.text(512, 550, 'Controls:', {
+            fontFamily: 'Arial', 
+            fontSize: '20px', 
+            color: '#FFD700',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        this.add.text(512, 590, '← → : Move  |  ↑ : Rotate  |  SPACE : Drop', {
+            fontFamily: 'Arial', 
+            fontSize: '18px', 
+            color: '#AAAAAA',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        // Click to start
+        this.input.once('pointerdown', () => {
+            this.changeScene();
+        });
 
         EventBus.emit('current-scene-ready', this);
     }
     
     changeScene ()
     {
-        if (this.logoTween)
-        {
-            this.logoTween.stop();
-            this.logoTween = null;
-        }
-
         this.scene.start('Game');
     }
 
     moveLogo (reactCallback: ({ x, y }: { x: number, y: number }) => void)
     {
-        if (this.logoTween)
-        {
-            if (this.logoTween.isPlaying())
-            {
-                this.logoTween.pause();
-            }
-            else
-            {
-                this.logoTween.play();
-            }
-        } 
-        else
-        {
-            this.logoTween = this.tweens.add({
-                targets: this.logo,
-                x: { value: 750, duration: 3000, ease: 'Back.easeInOut' },
-                y: { value: 80, duration: 1500, ease: 'Sine.easeOut' },
-                yoyo: true,
-                repeat: -1,
-                onUpdate: () => {
-                    if (reactCallback)
-                    {
-                        reactCallback({
-                            x: Math.floor(this.logo.x),
-                            y: Math.floor(this.logo.y)
-                        });
-                    }
-                }
-            });
-        }
+        // Legacy method - no longer used
     }
 }
