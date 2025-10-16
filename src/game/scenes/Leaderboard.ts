@@ -25,6 +25,12 @@ interface LeaderboardEntry {
     timestamp: number;   // Thời gian chơi (milliseconds)
 }
 
+// 🔧 Hằng số (Constants)
+// ======================================================
+const DEFAULT_PLAYER_NAME = 'Anonymous';  // Tên mặc định nếu không có tên
+const LEADERBOARD_KEY = 'kentakitris-leaderboard';  // Key trong localStorage
+const MAX_ENTRIES = 100;  // Số entry tối đa lưu trữ
+
 /**
  * ✅ Leaderboard Scene - Bảng xếp hạng
  * 
@@ -131,7 +137,7 @@ export class Leaderboard extends Scene {
     loadLeaderboard(): LeaderboardEntry[] {
         try {
             // 📖 Đọc dữ liệu từ localStorage
-            const dataString = localStorage.getItem('kentakitris-leaderboard');
+            const dataString = localStorage.getItem(LEADERBOARD_KEY);
             
             // Nếu chưa có dữ liệu → trả về mảng rỗng
             if (!dataString) {
@@ -140,7 +146,23 @@ export class Leaderboard extends Scene {
             }
 
             // 🔄 Chuyển string → array
-            const data: LeaderboardEntry[] = JSON.parse(dataString);
+            const parsed = JSON.parse(dataString);
+            
+            // ✅ Validate: Kiểm tra dữ liệu có đúng định dạng không
+            if (!Array.isArray(parsed)) {
+                console.warn('⚠️ Dữ liệu leaderboard không phải array, reset về rỗng');
+                return [];
+            }
+            
+            // ✅ Filter: Chỉ giữ entries hợp lệ
+            const data: LeaderboardEntry[] = parsed.filter(entry => {
+                return entry &&
+                    typeof entry.playerName === 'string' &&
+                    typeof entry.score === 'number' &&
+                    typeof entry.lines === 'number' &&
+                    typeof entry.level === 'number' &&
+                    typeof entry.timestamp === 'number';
+            });
 
             // 📊 Sắp xếp theo điểm giảm dần (cao nhất lên đầu)
             // sort() = sắp xếp mảng
@@ -236,7 +258,7 @@ export class Leaderboard extends Scene {
             });
 
             // 📝 Vẽ tên
-            const nameText = entry.playerName || 'Anonymous';
+            const nameText = entry.playerName || DEFAULT_PLAYER_NAME;
             this.add.text(300, y, nameText, {
                 fontFamily: 'Arial',
                 fontSize: '20px',
@@ -281,11 +303,31 @@ export class Leaderboard extends Scene {
      * 💡 Trả lời: Vì gọi từ scene khác mà không cần tạo instance!
      *            Ví dụ: Leaderboard.saveScore(100, 10, 1)
      */
-    static saveScore(score: number, lines: number, level: number, playerName: string = 'Anonymous') {
+    static saveScore(score: number, lines: number, level: number, playerName: string = DEFAULT_PLAYER_NAME) {
         try {
             // 📖 Load leaderboard hiện tại
-            const dataString = localStorage.getItem('kentakitris-leaderboard');
-            let data: LeaderboardEntry[] = dataString ? JSON.parse(dataString) : [];
+            const dataString = localStorage.getItem(LEADERBOARD_KEY);
+            let data: LeaderboardEntry[] = [];
+            
+            // ✅ Parse và validate dữ liệu hiện có
+            if (dataString) {
+                try {
+                    const parsed = JSON.parse(dataString);
+                    if (Array.isArray(parsed)) {
+                        // Filter để chỉ giữ entries hợp lệ
+                        data = parsed.filter(entry => {
+                            return entry &&
+                                typeof entry.playerName === 'string' &&
+                                typeof entry.score === 'number' &&
+                                typeof entry.lines === 'number' &&
+                                typeof entry.level === 'number' &&
+                                typeof entry.timestamp === 'number';
+                        });
+                    }
+                } catch (parseError) {
+                    console.warn('⚠️ Không parse được dữ liệu cũ, bắt đầu mới');
+                }
+            }
 
             // ➕ Thêm entry mới
             const newEntry: LeaderboardEntry = {
@@ -301,11 +343,11 @@ export class Leaderboard extends Scene {
             // 📊 Sắp xếp lại theo điểm giảm dần
             data.sort((a, b) => b.score - a.score);
 
-            // 🔟 Giữ tối đa 100 entries (để không quá nặng)
-            data = data.slice(0, 100);
+            // 🔟 Giữ tối đa MAX_ENTRIES (để không quá nặng)
+            data = data.slice(0, MAX_ENTRIES);
 
             // 💾 Lưu lại vào localStorage
-            localStorage.setItem('kentakitris-leaderboard', JSON.stringify(data));
+            localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(data));
 
             console.log('✅ Đã lưu điểm vào leaderboard:', newEntry);
 
