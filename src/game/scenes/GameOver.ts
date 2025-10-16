@@ -1,40 +1,82 @@
+// src/game/scenes/GameOver.ts
+// ======================================================
+// ✅ GameOver Scene - Màn hình game over
+// 
+// Scene này hiển thị khi người chơi thua:
+// - Chữ "GAME OVER" màu đỏ
+// - Điểm số cuối cùng
+// - Nút "Click to Play Again"
+// 
+// Khi click chuột → Quay lại MainMenu
+// 
+// 💀 Game Over = Thua game (không còn chỗ để mảnh mới spawn)
+// ======================================================
+
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 
+/**
+ * ✅ GameOver Scene - Màn hình kết thúc
+ * 
+ * Scene này nhận điểm số từ Game scene và hiển thị
+ */
 export class GameOver extends Scene
 {
+    // 📹 Camera
     camera: Phaser.Cameras.Scene2D.Camera;
-    gameOverText: Phaser.GameObjects.Text;
-    scoreText: Phaser.GameObjects.Text;
-    restartText: Phaser.GameObjects.Text;
+    
+    // 📝 Text objects
+    gameOverText: Phaser.GameObjects.Text;  // Chữ "GAME OVER"
+    scoreText: Phaser.GameObjects.Text;     // Điểm số
+    restartText: Phaser.GameObjects.Text;   // Nút restart (nhấp nháy)
 
     constructor ()
     {
         super('GameOver');
     }
 
+    /**
+     * ✅ create() - Tạo màn hình game over
+     * 
+     * Tham số:
+     * - data: { score: number } - Điểm số từ Game scene
+     * 
+     * Các bước:
+     * 1. Đặt màu nền
+     * 2. Hiển thị "GAME OVER" (đỏ, lớn)
+     * 3. Hiển thị điểm số
+     * 4. Hiển thị nút restart (nhấp nháy)
+     * 5. Lắng nghe click chuột
+     * 
+     * 📦 data = Dữ liệu truyền từ scene khác
+     *    Ví dụ: this.scene.start('GameOver', { score: 100 })
+     */
     create (data: { score: number })
     {
+        // 📹 Thiết lập camera và màu nền
         this.camera = this.cameras.main
-        this.camera.setBackgroundColor(0x0d0d1a);
+        this.camera.setBackgroundColor(0x0d0d1a); // Xanh đen
 
+        // 💀 Chữ "GAME OVER"
         this.gameOverText = this.add.text(512, 250, 'GAME OVER', {
             fontFamily: 'Arial Black', 
             fontSize: '64px', 
-            color: '#FF0000',
-            stroke: '#000000', 
+            color: '#FF0000',      // Màu đỏ
+            stroke: '#000000',     // Viền đen
             strokeThickness: 8,
             align: 'center'
         }).setOrigin(0.5);
 
-        const finalScore = data.score || 0;
+        // 🏆 Điểm số cuối cùng
+        const finalScore = data.score || 0; // Nếu không có điểm → 0
         this.scoreText = this.add.text(512, 350, `Final Score: ${finalScore}`, {
             fontFamily: 'Arial', 
             fontSize: '32px', 
-            color: '#FFD700',
+            color: '#FFD700',  // Màu vàng
             align: 'center'
         }).setOrigin(0.5);
 
+        // 🔄 Nút "Click to Play Again"
         this.restartText = this.add.text(512, 450, 'Click to Play Again', {
             fontFamily: 'Arial', 
             fontSize: '24px', 
@@ -42,23 +84,29 @@ export class GameOver extends Scene
             align: 'center'
         }).setOrigin(0.5);
 
-        // Make restart text blink
+        // ✨ Hiệu ứng nhấp nháy
         this.tweens.add({
             targets: this.restartText,
-            alpha: 0.3,
-            duration: 1000,
-            yoyo: true,
-            repeat: -1
+            alpha: 0.3,        // Mờ xuống 30%
+            duration: 1000,    // Trong 1 giây
+            yoyo: true,        // Quay lại
+            repeat: -1         // Lặp mãi
         });
 
-        // Click to restart
+        // 🖱️ Lắng nghe click chuột
         this.input.once('pointerdown', () => {
-            this.scene.start('MainMenu');
+            this.scene.start('MainMenu'); // Quay lại menu
         });
         
+        // 📡 Thông báo: Scene sẵn sàng!
         EventBus.emit('current-scene-ready', this);
     }
 
+    /**
+     * ✅ changeScene() - Quay lại MainMenu
+     * 
+     * Method này có thể gọi từ ngoài (ví dụ từ React)
+     */
     changeScene ()
     {
         this.scene.start('MainMenu');
