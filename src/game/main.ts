@@ -17,6 +17,7 @@ import { Boot } from './scenes/Boot';
 import { GameOver } from './scenes/GameOver';
 import { Game as MainGame } from './scenes/Game';
 import { MainMenu } from './scenes/MainMenu';
+import { Leaderboard } from './scenes/Leaderboard';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
 
@@ -37,7 +38,8 @@ const config: Phaser.Types.Core.GameConfig = {
         Preloader,           // Scene 2: Load assets
         MainMenu,            // Scene 3: Menu chính
         MainGame,            // Scene 4: Game play
-        GameOver             // Scene 5: Game over
+        GameOver,            // Scene 5: Game over
+        Leaderboard          // Scene 6: Bảng xếp hạng
     ]
 };
 

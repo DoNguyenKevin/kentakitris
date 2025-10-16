@@ -28,6 +28,7 @@ export class MainMenu extends Scene
     // 📝 Text objects
     logoText: Phaser.GameObjects.Text;   // Tiêu đề game
     startText: Phaser.GameObjects.Text;  // Nút start (nhấp nháy)
+    leaderboardText: Phaser.GameObjects.Text; // Nút leaderboard
 
     constructor ()
     {
@@ -42,8 +43,9 @@ export class MainMenu extends Scene
      * 2. Tạo tiêu đề game (lớn, vàng)
      * 3. Tạo subtitle
      * 4. Tạo nút "Click to Start" (nhấp nháy)
-     * 5. Hiển thị hướng dẫn phím
-     * 6. Lắng nghe click chuột
+     * 5. Tạo nút "Leaderboard"
+     * 6. Hiển thị hướng dẫn phím
+     * 7. Lắng nghe click chuột
      * 
      * 💡 Tween = Animation (hiệu ứng chuyển động)
      */
@@ -87,6 +89,28 @@ export class MainMenu extends Scene
             duration: 1000,           // Trong 1 giây
             yoyo: true,               // Quay lại (mờ → sáng → mờ...)
             repeat: -1                // Lặp mãi (-1 = vô hạn)
+        });
+
+        // 🏆 Nút "Leaderboard"
+        this.leaderboardText = this.add.text(512, 470, '🏆 Leaderboard', {
+            fontFamily: 'Arial',
+            fontSize: '28px',
+            color: '#FFD700',  // Màu vàng
+            align: 'center'
+        }).setOrigin(0.5);
+
+        // 🖱️ Cho phép click vào nút Leaderboard
+        this.leaderboardText.setInteractive({ useHandCursor: true });
+        this.leaderboardText.on('pointerdown', () => {
+            this.scene.start('Leaderboard');
+        });
+
+        // ✨ Hiệu ứng hover (phóng to khi di chuột vào)
+        this.leaderboardText.on('pointerover', () => {
+            this.leaderboardText.setScale(1.1);  // Phóng to 110%
+        });
+        this.leaderboardText.on('pointerout', () => {
+            this.leaderboardText.setScale(1.0);  // Về kích thước bình thường
         });
 
         // 📖 Hướng dẫn phím

@@ -29,6 +29,7 @@ export class GameOver extends Scene
     gameOverText: Phaser.GameObjects.Text;  // Chữ "GAME OVER"
     scoreText: Phaser.GameObjects.Text;     // Điểm số
     restartText: Phaser.GameObjects.Text;   // Nút restart (nhấp nháy)
+    leaderboardText: Phaser.GameObjects.Text; // Nút leaderboard
 
     constructor ()
     {
@@ -46,7 +47,8 @@ export class GameOver extends Scene
      * 2. Hiển thị "GAME OVER" (đỏ, lớn)
      * 3. Hiển thị điểm số
      * 4. Hiển thị nút restart (nhấp nháy)
-     * 5. Lắng nghe click chuột
+     * 5. Hiển thị nút "View Leaderboard"
+     * 6. Lắng nghe click chuột
      * 
      * 📦 data = Dữ liệu truyền từ scene khác
      *    Ví dụ: this.scene.start('GameOver', { score: 100 })
@@ -91,6 +93,28 @@ export class GameOver extends Scene
             duration: 1000,    // Trong 1 giây
             yoyo: true,        // Quay lại
             repeat: -1         // Lặp mãi
+        });
+
+        // 🏆 Nút "View Leaderboard"
+        this.leaderboardText = this.add.text(512, 520, '🏆 View Leaderboard', {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            color: '#FFD700',  // Màu vàng
+            align: 'center'
+        }).setOrigin(0.5);
+
+        // 🖱️ Cho phép click vào nút Leaderboard
+        this.leaderboardText.setInteractive({ useHandCursor: true });
+        this.leaderboardText.on('pointerdown', () => {
+            this.scene.start('Leaderboard');
+        });
+
+        // ✨ Hiệu ứng hover
+        this.leaderboardText.on('pointerover', () => {
+            this.leaderboardText.setScale(1.1);
+        });
+        this.leaderboardText.on('pointerout', () => {
+            this.leaderboardText.setScale(1.0);
         });
 
         // 🖱️ Lắng nghe click chuột
