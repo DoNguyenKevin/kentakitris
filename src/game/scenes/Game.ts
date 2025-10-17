@@ -14,6 +14,13 @@
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 import { Leaderboard } from './Leaderboard';
+import { 
+    DIFFICULTY_LEVELS, 
+    calculateDropDelay,
+    calculateScore,
+    getDifficultyConfig,
+    DEFAULT_DIFFICULTY
+} from '../constants/DifficultyConstants';
 
 // 🎮 Hằng số game (Game Constants)
 // ======================================================
@@ -125,6 +132,7 @@ export class Game extends Scene {
     lines: number;               // Số hàng đã xóa
     level: number;               // Level hiện tại (1, 2, 3...)
     gameOver: boolean;           // Trạng thái game (true = thua)
+    difficulty: DIFFICULTY_LEVELS; // Độ khó đã chọn
     
     // 🎨 Graphics - Công cụ vẽ của Phaser
     boardGraphics: Phaser.GameObjects.Graphics;      // Vẽ board
@@ -135,6 +143,7 @@ export class Game extends Scene {
     scoreText: Phaser.GameObjects.Text;  // Hiển thị điểm
     levelText: Phaser.GameObjects.Text;  // Hiển thị level
     linesText: Phaser.GameObjects.Text;  // Hiển thị số hàng
+    difficultyText: Phaser.GameObjects.Text; // Hiển thị độ khó
     
     // 🔄 Game loop - Vòng lặp game
     dropTimer: Phaser.Time.TimerEvent;   // Bộ đếm thời gian tự động rơi
@@ -160,18 +169,23 @@ export class Game extends Scene {
      * Nhiệm vụ: Chuẩn bị mọi thứ trước khi chơi
      * 
      * Các bước:
-     * 1. Thiết lập camera và màu nền
-     * 2. Khởi tạo board trống (mảng 20x10)
-     * 3. Đặt điểm/level/lines = 0
-     * 4. Tạo các đối tượng Graphics để vẽ
-     * 5. Tạo UI (text hiển thị điểm, level...)
-     * 6. Thiết lập điều khiển (keyboard)
-     * 7. Spawn mảnh đầu tiên
-     * 8. Bắt đầu game loop
+     * 1. Nhận difficulty từ MainMenu scene
+     * 2. Thiết lập camera và màu nền
+     * 3. Khởi tạo board trống (mảng 20x10)
+     * 4. Đặt điểm/level/lines = 0
+     * 5. Tạo các đối tượng Graphics để vẽ
+     * 6. Tạo UI (text hiển thị điểm, level, difficulty...)
+     * 7. Thiết lập điều khiển (keyboard)
+     * 8. Spawn mảnh đầu tiên
+     * 9. Bắt đầu game loop với tốc độ theo difficulty
      * 
      * Try it: Chạy game và xem create() được gọi khi nào!
      */
-    create() {
+    create(data: { difficulty?: DIFFICULTY_LEVELS }) {
+        // 🎯 Nhận difficulty từ MainMenu (hoặc dùng mặc định)
+        this.difficulty = data.difficulty || DEFAULT_DIFFICULTY;
+        console.log('Game started with difficulty:', this.difficulty);
+        
         // 📹 Thiết lập camera
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x0d0d1a); // Màu nền tối (xanh đen)
@@ -188,7 +202,11 @@ export class Game extends Scene {
         this.lines = 0;        // Chưa xóa hàng nào
         this.level = 1;        // Level 1
         this.gameOver = false; // Chưa thua
-        this.dropDelay = 1000; // Mảnh rơi 1 lần/giây (1000ms)
+        
+        // 🎯 Tính dropDelay theo difficulty và level
+        // calculateDropDelay() tự động áp dụng công thức:
+        // dropDelay = (1000ms * dropSpeedMultiplier) / level
+        this.dropDelay = calculateDropDelay(this.difficulty, this.level);
 
         // 🎨 Tạo đối tượng Graphics (dùng để vẽ)
         this.boardGraphics = this.add.graphics();
@@ -217,6 +235,7 @@ export class Game extends Scene {
      * 
      * Tạo các chữ hiển thị trên màn hình:
      * - Tiêu đề game
+     * - Độ khó đã chọn
      * - Điểm số, Level, Lines
      * - Preview mảnh tiếp theo
      * - Hướng dẫn phím
@@ -236,49 +255,62 @@ export class Game extends Scene {
 
         // 📊 Bảng điểm bên phải
         const scoreX = boardX + BOARD_WIDTH * BLOCK_SIZE + 50;
-        const scoreY = boardY + 50;
+        const scoreY = boardY + 20;
+
+        // 🎯 Hiển thị Độ khó
+        const difficultyConfig = getDifficultyConfig(this.difficulty);
+        this.add.text(scoreX, scoreY, 'DIFFICULTY', {
+            fontFamily: 'Arial',
+            fontSize: '16px',
+            color: '#FFD700',
+        });
+        this.difficultyText = this.add.text(scoreX, scoreY + 25, difficultyConfig.displayName, {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            color: difficultyConfig.color, // Màu theo độ khó
+        });
 
         // Chữ "SCORE"
-        this.add.text(scoreX, scoreY, 'SCORE', {
+        this.add.text(scoreX, scoreY + 70, 'SCORE', {
             fontFamily: 'Arial',
             fontSize: '20px',
             color: '#FFD700',
         });
         // Điểm số (text động, sẽ cập nhật khi xóa hàng)
-        this.scoreText = this.add.text(scoreX, scoreY + 30, '0', {
+        this.scoreText = this.add.text(scoreX, scoreY + 100, '0', {
             fontFamily: 'Arial',
             fontSize: '32px',
             color: '#FFFFFF',
         });
 
         // Chữ "LEVEL"
-        this.add.text(scoreX, scoreY + 80, 'LEVEL', {
+        this.add.text(scoreX, scoreY + 150, 'LEVEL', {
             fontFamily: 'Arial',
             fontSize: '20px',
             color: '#FFD700',
         });
         // Level hiện tại (text động)
-        this.levelText = this.add.text(scoreX, scoreY + 110, '1', {
+        this.levelText = this.add.text(scoreX, scoreY + 180, '1', {
             fontFamily: 'Arial',
             fontSize: '28px',
             color: '#FFFFFF',
         });
 
         // Chữ "LINES"
-        this.add.text(scoreX, scoreY + 160, 'LINES', {
+        this.add.text(scoreX, scoreY + 230, 'LINES', {
             fontFamily: 'Arial',
             fontSize: '20px',
             color: '#FFD700',
         });
         // Số hàng đã xóa (text động)
-        this.linesText = this.add.text(scoreX, scoreY + 190, '0', {
+        this.linesText = this.add.text(scoreX, scoreY + 260, '0', {
             fontFamily: 'Arial',
             fontSize: '28px',
             color: '#FFFFFF',
         });
 
         // Chữ "NEXT" (mảnh tiếp theo)
-        this.add.text(scoreX, scoreY + 250, 'NEXT', {
+        this.add.text(scoreX, scoreY + 320, 'NEXT', {
             fontFamily: 'Arial',
             fontSize: '20px',
             color: '#FFD700',
@@ -633,14 +665,22 @@ export class Game extends Scene {
         
         if (linesCleared > 0) {
             this.lines += linesCleared;
-            const points = [0, 10, 30, 50, 80][linesCleared] * this.level;
+            
+            // 🎯 Tính điểm theo difficulty
+            // Base points: [0, 10, 30, 50, 80] cho 0-4 hàng
+            // Nhân với level và difficulty multiplier
+            const basePoints = [0, 10, 30, 50, 80][linesCleared] * this.level;
+            const points = calculateScore(basePoints, this.difficulty);
             this.score += points;
             
             // Level up
             const newLevel = Math.floor(this.lines / 10) + 1;
             if (newLevel > this.level) {
                 this.level = newLevel;
-                this.dropDelay = Math.max(100, 1000 - (this.level - 1) * 100);
+                
+                // 🎯 Cập nhật dropDelay theo difficulty và level mới
+                this.dropDelay = calculateDropDelay(this.difficulty, this.level);
+                
                 // Restart the timer with new delay
                 this.dropTimer.remove();
                 this.startGameLoop();
