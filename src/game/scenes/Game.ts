@@ -728,9 +728,14 @@ export class Game extends Scene {
         this.gameOver = true;
         this.dropTimer.remove();
         
-        // 💾 Lưu điểm vào leaderboard
+        // 💾 Lưu điểm vào Firebase leaderboard
         // Gọi hàm static saveScore() của Leaderboard scene
-        Leaderboard.saveScore(this.score, this.lines, this.level);
+        // Firebase tự động lưu điểm lên cloud và chia sẻ với mọi người!
+        
+        // 👤 Lấy tên người chơi từ localStorage (nếu có)
+        const playerName = localStorage.getItem('playerName') || 'Anonymous';
+        
+        Leaderboard.saveScore(this.score, playerName);
         
         this.add.text(512, 384, 'GAME OVER', {
             fontFamily: 'Arial Black',
