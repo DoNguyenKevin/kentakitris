@@ -29,19 +29,21 @@ const BLOCK_SIZE = 30;   // Mỗi ô vuông = 30x30 pixels
 // 🎨 Màu sắc cho các mảnh Tetris
 // ======================================================
 // Mỗi loại mảnh có 1 màu riêng (theo chuẩn Tetris hiện đại)
+// ✅ Đã cập nhật để khớp với theme của game JS cũ
 const COLORS = [
     0x000000, // 0 = Trống (Empty) - Màu đen
-    0xFF6B9D, // 1 = T - Màu hồng (Pink)
-    0x00D9FF, // 2 = I - Màu xanh nước biển (Cyan)
-    0x00FF88, // 3 = J - Màu xanh lá (Green)
-    0xFF9500, // 4 = L - Màu cam (Orange)
-    0xFFDD00, // 5 = O - Màu vàng (Yellow)
-    0xFF3E3E, // 6 = S - Màu đỏ (Red)
-    0x9D6BFF, // 7 = Z - Màu tím (Purple)
+    0xFF0D72, // 1 = T - Màu hồng sáng (Bright Pink)
+    0x0DC2FF, // 2 = I - Màu xanh nước biển (Cyan)
+    0x0DFF72, // 3 = J - Màu xanh lá chanh (Lime Green)
+    0xFF8E0D, // 4 = L - Màu cam (Orange)
+    0xFFE100, // 5 = O - Màu vàng (Yellow)
+    0xFF1A0D, // 6 = S - Màu đỏ sáng (Bright Red)
+    0x5833FF, // 7 = Z - Màu tím xanh (Blue Violet)
 ];
 
 // 💡 Lưu ý: Màu trong Phaser dùng hệ 16 (hex)
-//          Ví dụ: 0xFF6B9D = màu hồng
+//          Ví dụ: 0xFF0D72 = màu hồng sáng
+//          Các màu này khớp với game JS cũ trong src/index.css
 
 // 🧩 Hình dạng các mảnh Tetris (Shapes)
 // ======================================================
