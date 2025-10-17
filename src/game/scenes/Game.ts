@@ -44,6 +44,7 @@ const COLORS = [
 // 💡 Lưu ý: Màu trong Phaser dùng hệ 16 (hex)
 //          Ví dụ: 0xFF0D72 = màu hồng sáng
 //          Các màu này khớp với game JS cũ trong src/index.css
+//          (CSS classes: .color-1 đến .color-7, dòng 94-100)
 
 // 🧩 Hình dạng các mảnh Tetris (Shapes)
 // ======================================================
