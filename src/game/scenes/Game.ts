@@ -31,6 +31,9 @@ const BOARD_WIDTH = 10;  // 10 cột (chuẩn Tetris gốc từ 1984)
 const BOARD_HEIGHT = 20; // 20 hàng
 const BLOCK_SIZE = 30;   // Mỗi ô vuông = 30x30 pixels
 
+// ⚡ Energy Block constants
+const FROZEN_TEXT_BLINK_CYCLE = 600; // ms - Chu kỳ nhấp nháy của text frozen (300ms * 2)
+
 // ❓ Thử nghiệm: Thay BOARD_WIDTH = 15 → Board rộng hơn!
 // ❓ Thử nghiệm: Thay BLOCK_SIZE = 40 → Ô to hơn!
 // 🎨 Màu sắc cho các mảnh Tetris
@@ -52,11 +55,6 @@ const COLORS = [
 //          Ví dụ: 0xFF0D72 = màu hồng sáng
 //          Các màu này khớp với game JS cũ trong src/index.css
 //          (CSS classes: .color-1 đến .color-7, dòng 94-100)
-
-// 🧩 Hình dạng các mảnh Tetris (Shapes)
-// ======================================================
-// 7 loại mảnh trong Tetris, mỗi loại có hình dạng riêng
-// Dùng mảng 2 chiều để biểu diễn: 1 = có ô, 0 = trống
 
 // 🧩 Hình dạng các mảnh Tetris (Shapes)
 // ======================================================
@@ -966,7 +964,6 @@ export class Game extends Scene {
             const newBlock = this.createEnergyBlock();
             if (newBlock) {
                 this.energyBlocks.push(newBlock);
-                console.log('⚡ Energy block spawned at x =', newBlock.x);
             }
         }
     }
@@ -999,8 +996,7 @@ export class Game extends Scene {
                 block.lastDropTime = currentTime;
                 
                 // ❌ Chạm đáy → Game Over!
-                if (block.y >= BOARD_HEIGHT - 1) {
-                    console.log('💥 Energy block hit bottom! Game Over!');
+                if (block.y >= BOARD_HEIGHT) {
                     this.energyBlocks.splice(i, 1);
                     this.endGame();
                     return;
@@ -1008,7 +1004,6 @@ export class Game extends Scene {
                 
                 // ❌ Va chạm với mảnh đã khóa → Game Over!
                 if (this.board[block.y] && this.board[block.y][block.x] !== 0) {
-                    console.log('💥 Energy block hit locked piece! Game Over!');
                     this.energyBlocks.splice(i, 1);
                     this.endGame();
                     return;
@@ -1088,7 +1083,6 @@ export class Game extends Scene {
             
             // 💥 Chuột quá gần → NỔ!
             if (distance < (block.explosionDistance || 0)) {
-                console.log('💥 Energy block exploded! Distance:', distance);
                 this.explodeEnergyBlock(i);
                 return;
             }
@@ -1192,7 +1186,7 @@ export class Game extends Scene {
             alpha: 0.3,
             duration: 300,
             yoyo: true,
-            repeat: Math.floor(duration / 600) // Nhấp nháy cho đến hết thời gian
+            repeat: Math.floor(duration / FROZEN_TEXT_BLINK_CYCLE) // Nhấp nháy cho đến hết thời gian
         });
         
         // ⏰ Bỏ đóng băng sau duration
@@ -1202,7 +1196,6 @@ export class Game extends Scene {
                 this.frozenText.destroy();
                 this.frozenText = null;
             }
-            console.log('✅ Mouse unfrozen!');
         });
     }
 
