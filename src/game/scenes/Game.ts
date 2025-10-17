@@ -26,6 +26,8 @@ import {
     BOARD_WIDTH, 
     BOARD_HEIGHT, 
     BLOCK_SIZE,
+    BOARD_X,
+    BOARD_Y,
     SHAPES
 } from '../constants/GameConstants';
 import { EnergyBlockManager } from '../managers/EnergyBlockManager';
@@ -70,10 +72,6 @@ export class Game extends Scene {
     // 🎨 Managers & Helpers - Quản lý logic phức tạp
     energyBlockManager: EnergyBlockManager;  // Quản lý energy blocks
     gameRenderer: GameRenderer;              // Quản lý rendering
-    
-    // 📍 Board position - Vị trí board trên màn hình
-    boardX: number = 200;  // Vị trí X của board
-    boardY: number = 50;   // Vị trí Y của board
     
     /**
      * ✅ Constructor - Khởi tạo scene
@@ -132,16 +130,17 @@ export class Game extends Scene {
         this.dropDelay = calculateDropDelay(this.difficulty, this.level);
 
         // 🎨 Khởi tạo Renderer (quản lý vẽ game)
-        this.gameRenderer = new GameRenderer(this, this.boardX, this.boardY);
+        this.gameRenderer = new GameRenderer(this, BOARD_X, BOARD_Y);
         
         // ⚡ Khởi tạo Energy Block Manager
         this.energyBlockManager = new EnergyBlockManager(
             this,
             this.difficulty,
-            this.boardX,
-            this.boardY,
+            BOARD_X,
+            BOARD_Y,
             this.board,
-            () => this.endGame()  // Callback khi game over
+            () => this.endGame(),  // Callback khi game over
+            () => this.gameOver     // Callback để kiểm tra game over
         );
         this.energyBlockManager.init();
 
@@ -175,19 +174,16 @@ export class Game extends Scene {
      * 📍 Vị trí: Bên phải board
      */
     createUI() {
-        const boardX = 200;  // Board ở x = 200
-        const boardY = 50;   // Board ở y = 50
-
         // 🏆 Tiêu đề game
-        this.add.text(boardX + BOARD_WIDTH * BLOCK_SIZE / 2, 20, 'KENTAKITRIS', {
+        this.add.text(BOARD_X + BOARD_WIDTH * BLOCK_SIZE / 2, 20, 'KENTAKITRIS', {
             fontFamily: 'Arial Black',
             fontSize: '32px',
             color: '#FFD700',  // Màu vàng
         }).setOrigin(0.5);  // Căn giữa
 
         // 📊 Bảng điểm bên phải
-        const scoreX = boardX + BOARD_WIDTH * BLOCK_SIZE + 50;
-        const scoreY = boardY + 20;
+        const scoreX = BOARD_X + BOARD_WIDTH * BLOCK_SIZE + 50;
+        const scoreY = BOARD_Y + 20;
 
         // 🎯 Hiển thị Độ khó
         const difficultyConfig = getDifficultyConfig(this.difficulty);
@@ -249,8 +245,8 @@ export class Game extends Scene {
         });
 
         // 📖 Hướng dẫn phím (ở dưới board)
-        const helpY = boardY + BOARD_HEIGHT * BLOCK_SIZE + 30;
-        this.add.text(boardX, helpY, '← → : Move  |  ↑ : Rotate  |  SPACE : Drop', {
+        const helpY = BOARD_Y + BOARD_HEIGHT * BLOCK_SIZE + 30;
+        this.add.text(BOARD_X, helpY, '← → : Move  |  ↑ : Rotate  |  SPACE : Drop', {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#888888',

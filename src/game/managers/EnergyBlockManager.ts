@@ -44,6 +44,7 @@ export class EnergyBlockManager {
     private graphics: Phaser.GameObjects.Graphics;
     private board: number[][];
     private onGameOver: () => void;
+    private isGameOver: () => boolean;
     
     /**
      * ✅ Constructor - Khởi tạo EnergyBlockManager
@@ -54,6 +55,7 @@ export class EnergyBlockManager {
      * @param boardY - Vị trí Y của board
      * @param board - Tham chiếu đến board game (để kiểm tra va chạm)
      * @param onGameOver - Callback khi game over
+     * @param isGameOver - Callback để kiểm tra game đã over chưa
      */
     constructor(
         scene: Scene,
@@ -61,7 +63,8 @@ export class EnergyBlockManager {
         boardX: number,
         boardY: number,
         board: number[][],
-        onGameOver: () => void
+        onGameOver: () => void,
+        isGameOver: () => boolean
     ) {
         this.scene = scene;
         this.difficulty = difficulty;
@@ -73,6 +76,7 @@ export class EnergyBlockManager {
         this.graphics = scene.add.graphics();
         this.board = board;
         this.onGameOver = onGameOver;
+        this.isGameOver = isGameOver;
     }
     
     /**
@@ -287,7 +291,8 @@ export class EnergyBlockManager {
         
         // 🖱️ Lắng nghe sự kiện di chuyển chuột
         this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-            if (this.isMouseFrozen) return;
+            // ❌ Nếu chuột frozen hoặc game over → không làm gì
+            if (this.isMouseFrozen || this.isGameOver()) return;
             this.checkMouseProximity(pointer.x, pointer.y);
         });
     }

@@ -9,6 +9,10 @@ export const BOARD_WIDTH = 10;  // 10 cột (chuẩn Tetris gốc từ 1984)
 export const BOARD_HEIGHT = 20; // 20 hàng
 export const BLOCK_SIZE = 30;   // Mỗi ô vuông = 30x30 pixels
 
+// 📍 Board position - Vị trí board trên màn hình
+export const BOARD_X = 200;  // Vị trí X của board (pixels)
+export const BOARD_Y = 50;   // Vị trí Y của board (pixels)
+
 // ⚡ Energy Block constants
 export const FROZEN_TEXT_BLINK_CYCLE = 600; // ms - Chu kỳ nhấp nháy của text frozen (300ms * 2)
 
