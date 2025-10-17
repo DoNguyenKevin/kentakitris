@@ -7,38 +7,36 @@
 // - Medals cho top 3 (🥇🥈🥉)
 // - Highlight người chơi hiện tại
 // - Nút "Back to Menu"
+// - 🔥 Realtime updates từ Firebase!
 // 
 // 🏆 Leaderboard = Bảng xếp hạng
 //    Cho phép người chơi xem ai giỏi nhất!
+// 
+// 🔥 Firebase Integration:
+//    Dữ liệu được lưu trên cloud, chia sẻ giữa mọi người!
 // ======================================================
 
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
-
-// 🏆 Cấu trúc dữ liệu cho 1 entry trong leaderboard
-// ======================================================
-interface LeaderboardEntry {
-    playerName: string;  // Tên người chơi
-    score: number;       // Điểm số
-    lines: number;       // Số hàng đã xóa
-    level: number;       // Level đạt được
-    timestamp: number;   // Thời gian chơi (milliseconds)
-}
+import { firebaseService, LeaderboardEntry } from '../services/FirebaseService';
 
 // 🔧 Hằng số (Constants)
 // ======================================================
 const DEFAULT_PLAYER_NAME = 'Anonymous';  // Tên mặc định nếu không có tên
-const LEADERBOARD_KEY = 'kentakitris-leaderboard';  // Key trong localStorage
-const MAX_ENTRIES = 100;  // Số entry tối đa lưu trữ
 
 /**
  * ✅ Leaderboard Scene - Bảng xếp hạng
  * 
  * Scene này hiển thị top 10 người chơi tốt nhất
- * Dữ liệu lưu trong localStorage (không mất khi tắt trình duyệt)
+ * Dữ liệu được lưu trên Firebase Realtime Database
  * 
  * 🎮 Scene = Màn hình trong game
  * Mỗi scene là 1 màn hình khác nhau: Menu, Game, GameOver, Leaderboard...
+ * 
+ * 🔥 Firebase Integration:
+ * - Dữ liệu được đồng bộ realtime giữa tất cả người chơi
+ * - Tự động update khi có điểm mới
+ * - Lưu trữ trên cloud, không bị mất
  */
 export class Leaderboard extends Scene {
     // 📹 Camera
@@ -47,9 +45,16 @@ export class Leaderboard extends Scene {
     // 📝 Text objects
     titleText: Phaser.GameObjects.Text;
     backText: Phaser.GameObjects.Text;
+    statusText: Phaser.GameObjects.Text;  // Text hiển thị trạng thái loading/error
     
     // 📊 Leaderboard data
     leaderboardData: LeaderboardEntry[];
+    
+    // 🔄 Realtime subscription
+    unsubscribe: (() => void) | null = null;  // Function để hủy đăng ký updates
+    
+    // 🎨 Text objects cho entries (để có thể update)
+    entryTexts: Phaser.GameObjects.Text[] = [];
     
     constructor() {
         super('Leaderboard');
@@ -61,15 +66,17 @@ export class Leaderboard extends Scene {
      * Các bước:
      * 1. Đặt màu nền
      * 2. Hiển thị tiêu đề "🏆 LEADERBOARD"
-     * 3. Load dữ liệu từ localStorage
-     * 4. Hiển thị top 10 entries
+     * 3. Khởi tạo Firebase (nếu chưa)
+     * 4. Subscribe để nhận updates realtime
      * 5. Thêm nút "Back to Menu"
      * 6. Lắng nghe click chuột
+     * 7. Đăng ký cleanup khi scene shutdown
      * 
-     * 💾 localStorage = Kho lưu trữ trên trình duyệt
-     *    Dữ liệu không mất khi tắt trình duyệt!
+     * 🔥 Firebase Realtime Updates:
+     *    Khi ai đó lưu điểm mới → leaderboard tự động cập nhật!
+     *    Không cần refresh trang.
      */
-    create() {
+    async create() {
         // 📹 Thiết lập camera và màu nền
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x0d0d1a); // Xanh đen
@@ -84,11 +91,13 @@ export class Leaderboard extends Scene {
             align: 'center'
         }).setOrigin(0.5);
 
-        // 📊 Load dữ liệu từ localStorage
-        this.leaderboardData = this.loadLeaderboard();
-
-        // 🎨 Hiển thị leaderboard entries
-        this.renderLeaderboard();
+        // 📊 Status text (hiển thị trạng thái)
+        this.statusText = this.add.text(512, 350, '🔄 Đang kết nối Firebase...', {
+            fontFamily: 'Arial',
+            fontSize: '20px',
+            color: '#888888',
+            align: 'center'
+        }).setOrigin(0.5);
 
         // 🔙 Nút "Back to Menu"
         this.backText = this.add.text(512, 700, '⬅ Back to Menu', {
@@ -113,68 +122,89 @@ export class Leaderboard extends Scene {
             this.scene.start('MainMenu');
         });
 
+        // 🔥 Khởi tạo Firebase và load leaderboard
+        await this.initializeFirebase();
+
+        // 🗑️ Đăng ký cleanup khi scene shutdown
+        // Sự kiện 'shutdown' được gọi khi chuyển sang scene khác
+        this.events.once('shutdown', () => {
+            this.cleanupFirebase();
+        });
+
         // 📡 Thông báo: Scene sẵn sàng!
         EventBus.emit('current-scene-ready', this);
     }
 
     /**
-     * ✅ loadLeaderboard() - Load dữ liệu từ localStorage
+     * ✅ initializeFirebase() - Khởi tạo Firebase và subscribe updates
      * 
-     * Đọc danh sách điểm từ localStorage và sắp xếp
+     * Kết nối với Firebase và đăng ký nhận updates realtime
      * 
      * Cách hoạt động:
-     * 1. Đọc dữ liệu từ localStorage key 'kentakitris-leaderboard'
-     * 2. Parse JSON string thành array
-     * 3. Sắp xếp theo điểm giảm dần (cao nhất lên đầu)
-     * 4. Lấy top 10 entries
+     * 1. Kiểm tra Firebase đã khởi tạo chưa
+     * 2. Nếu chưa → gọi firebaseService.initialize()
+     * 3. Subscribe để nhận updates realtime
+     * 4. Mỗi khi có update → render lại leaderboard
      * 
-     * Trả về: Array của LeaderboardEntry (max 10 entries)
+     * 🔄 Realtime Updates:
+     *    Khi người khác lưu điểm → callback tự động được gọi!
+     *    UI update ngay lập tức không cần refresh.
      * 
-     * ❓ Câu hỏi: Tại sao dùng JSON.parse()?
-     * 💡 Trả lời: Vì localStorage chỉ lưu được text (string)!
-     *            Phải chuyển text → object bằng JSON.parse()
+     * ❓ Câu hỏi: Tại sao dùng async/await?
+     * 💡 Trả lời: Vì kết nối Firebase mất thời gian!
+     *            async/await giúp đợi kết nối xong mới tiếp tục.
      */
-    loadLeaderboard(): LeaderboardEntry[] {
+    async initializeFirebase() {
         try {
-            // 📖 Đọc dữ liệu từ localStorage
-            const dataString = localStorage.getItem(LEADERBOARD_KEY);
-            
-            // Nếu chưa có dữ liệu → trả về mảng rỗng
-            if (!dataString) {
-                console.log('📊 Chưa có dữ liệu leaderboard');
-                return [];
+            // 🔥 Khởi tạo Firebase (nếu chưa)
+            if (!firebaseService.isInitialized()) {
+                this.statusText.setText('🔄 Đang kết nối Firebase...');
+                await firebaseService.initialize();
             }
 
-            // 🔄 Chuyển string → array
-            const parsed = JSON.parse(dataString);
-            
-            // ✅ Validate: Kiểm tra dữ liệu có đúng định dạng không
-            if (!Array.isArray(parsed)) {
-                console.warn('⚠️ Dữ liệu leaderboard không phải array, reset về rỗng');
-                return [];
-            }
-            
-            // ✅ Filter: Chỉ giữ entries hợp lệ
-            const data: LeaderboardEntry[] = parsed.filter(entry => {
-                return entry &&
-                    typeof entry.playerName === 'string' &&
-                    typeof entry.score === 'number' &&
-                    typeof entry.lines === 'number' &&
-                    typeof entry.level === 'number' &&
-                    typeof entry.timestamp === 'number';
-            });
+            // 👂 Đăng ký nhận updates realtime
+            // Mỗi khi database thay đổi → callback được gọi
+            this.unsubscribe = firebaseService.subscribeToLeaderboard(
+                (entries) => {
+                    // 📊 Callback: Nhận dữ liệu mới
+                    this.leaderboardData = entries;
+                    
+                    // 🎨 Render lại UI với dữ liệu mới
+                    this.renderLeaderboard();
+                    
+                    // ✅ Cập nhật status
+                    this.statusText.setText('');  // Xóa text loading
+                },
+                10  // Top 10 entries
+            );
 
-            // 📊 Sắp xếp theo điểm giảm dần (cao nhất lên đầu)
-            // sort() = sắp xếp mảng
-            // (a, b) => b.score - a.score = sắp xếp giảm dần
-            data.sort((a, b) => b.score - a.score);
-
-            // 🔟 Lấy top 10 (slice = cắt mảng)
-            return data.slice(0, 10);
+            console.log('✅ Firebase leaderboard đã sẵn sàng!');
 
         } catch (error) {
-            console.error('❌ Lỗi khi load leaderboard:', error);
-            return [];
+            console.error('❌ Lỗi khi khởi tạo Firebase:', error);
+            
+            // ⚠️ Hiển thị thông báo lỗi
+            this.statusText.setText('❌ Không thể kết nối Firebase\nVui lòng thử lại sau');
+            this.statusText.setColor('#FF0000');  // Màu đỏ
+        }
+    }
+
+    /**
+     * ✅ cleanupFirebase() - Dọn dẹp Firebase listener
+     * 
+     * Hủy đăng ký Firebase listener để tránh memory leak
+     * 
+     * ❓ Câu hỏi: Tại sao cần unsubscribe?
+     * 💡 Trả lời: Để ngắt kết nối với Firebase!
+     *            Nếu không unsubscribe → listener vẫn chạy ngầm,
+     *            tốn bộ nhớ và có thể gây lỗi.
+     */
+    cleanupFirebase() {
+        // 🔌 Hủy đăng ký Firebase updates
+        if (this.unsubscribe) {
+            this.unsubscribe();
+            this.unsubscribe = null;
+            console.log('🔌 Đã ngắt kết nối Firebase listener');
         }
     }
 
@@ -184,52 +214,57 @@ export class Leaderboard extends Scene {
      * Vẽ từng entry lên màn hình
      * 
      * Cách hoạt động:
-     * 1. Duyệt qua từng entry (forEach)
-     * 2. Tạo text cho rank, tên, điểm
-     * 3. Thêm medal cho top 3 (🥇🥈🥉)
-     * 4. Tô màu khác cho từng hạng
+     * 1. Xóa các text entries cũ (nếu có)
+     * 2. Duyệt qua từng entry (forEach)
+     * 3. Tạo text cho rank, tên, điểm
+     * 4. Thêm medal cho top 3 (🥇🥈🥉)
+     * 5. Tô màu khác cho từng hạng
      * 
      * 🎨 forEach = Lặp qua từng phần tử trong mảng
      *    Ví dụ: [1,2,3].forEach(x => console.log(x))
      *            → In ra: 1, 2, 3
+     * 
+     * 🔄 Update: Hàm này được gọi lại mỗi khi có realtime update!
      */
     renderLeaderboard() {
         const startY = 180;  // Vị trí y bắt đầu
         const spacing = 45;  // Khoảng cách giữa các entry
 
+        // 🗑️ Xóa các text entries cũ
+        this.entryTexts.forEach(text => text.destroy());
+        this.entryTexts = [];
+
         // 📊 Kiểm tra: Có dữ liệu không?
-        if (this.leaderboardData.length === 0) {
+        if (!this.leaderboardData || this.leaderboardData.length === 0) {
             // Không có dữ liệu → Hiển thị thông báo
-            this.add.text(512, 350, 'No scores yet!\nPlay the game to set a record!', {
+            const emptyText = this.add.text(512, 350, 'No scores yet!\nPlay the game to set a record!', {
                 fontFamily: 'Arial',
                 fontSize: '24px',
                 color: '#888888',
                 align: 'center'
             }).setOrigin(0.5);
+            this.entryTexts.push(emptyText);
             return;
         }
 
         // 🎨 Vẽ header (tiêu đề cột)
-        this.add.text(150, startY - 40, 'RANK', {
+        const headerRank = this.add.text(150, startY - 40, 'RANK', {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#FFD700',
         });
-        this.add.text(300, startY - 40, 'NAME', {
+        const headerName = this.add.text(300, startY - 40, 'NAME', {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#FFD700',
         });
-        this.add.text(600, startY - 40, 'SCORE', {
+        const headerScore = this.add.text(600, startY - 40, 'SCORE', {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#FFD700',
         });
-        this.add.text(750, startY - 40, 'LINES', {
-            fontFamily: 'Arial',
-            fontSize: '16px',
-            color: '#FFD700',
-        });
+
+        this.entryTexts.push(headerRank, headerName, headerScore);
 
         // 🔄 Vẽ từng entry
         this.leaderboardData.forEach((entry, index) => {
@@ -251,108 +286,74 @@ export class Leaderboard extends Scene {
             }
 
             // 📝 Vẽ rank (hạng)
-            this.add.text(150, y, `${medal} #${index + 1}`, {
+            const rankText = this.add.text(150, y, `${medal} #${index + 1}`, {
                 fontFamily: 'Arial',
                 fontSize: '20px',
                 color: rankColor,
             });
 
             // 📝 Vẽ tên
-            const nameText = entry.playerName || DEFAULT_PLAYER_NAME;
-            this.add.text(300, y, nameText, {
+            const nameText = this.add.text(300, y, entry.name || DEFAULT_PLAYER_NAME, {
                 fontFamily: 'Arial',
                 fontSize: '20px',
                 color: '#FFFFFF',
             });
 
             // 📝 Vẽ điểm
-            this.add.text(600, y, entry.score.toString(), {
+            const scoreText = this.add.text(600, y, entry.score.toString(), {
                 fontFamily: 'Arial',
                 fontSize: '20px',
                 color: '#00FF88',  // Xanh lá
             });
 
-            // 📝 Vẽ số hàng
-            this.add.text(750, y, entry.lines.toString(), {
-                fontFamily: 'Arial',
-                fontSize: '20px',
-                color: '#888888',  // Xám
-            });
+            this.entryTexts.push(rankText, nameText, scoreText);
         });
     }
 
     /**
-     * ✅ saveScore() - Lưu điểm vào localStorage
+     * ✅ saveScore() - Lưu điểm vào Firebase
      * 
      * Hàm static để lưu điểm mới vào leaderboard
      * Được gọi từ Game scene khi game over
      * 
      * Tham số:
      * - score: điểm số
-     * - lines: số hàng đã xóa
-     * - level: level đạt được
      * - playerName: tên người chơi (optional)
      * 
      * Cách hoạt động:
-     * 1. Load leaderboard hiện tại
-     * 2. Thêm entry mới vào
-     * 3. Sắp xếp lại theo điểm
-     * 4. Lưu lại vào localStorage
+     * 1. Kiểm tra Firebase đã khởi tạo chưa
+     * 2. Nếu chưa → khởi tạo Firebase
+     * 3. Gọi firebaseService.saveScore()
+     * 4. Dữ liệu tự động lưu lên cloud
+     * 5. Tất cả người chơi đều thấy update realtime!
+     * 
+     * 🔥 Firebase Benefits:
+     * - Dữ liệu lưu trên cloud (không mất khi xóa cache)
+     * - Chia sẻ giữa tất cả người chơi
+     * - Realtime updates tự động
      * 
      * ❓ Câu hỏi: Tại sao là hàm static?
      * 💡 Trả lời: Vì gọi từ scene khác mà không cần tạo instance!
-     *            Ví dụ: Leaderboard.saveScore(100, 10, 1)
+     *            Ví dụ: Leaderboard.saveScore(100, "KHOI")
      */
-    static saveScore(score: number, lines: number, level: number, playerName: string = DEFAULT_PLAYER_NAME) {
+    static async saveScore(score: number, playerName: string = DEFAULT_PLAYER_NAME) {
         try {
-            // 📖 Load leaderboard hiện tại
-            const dataString = localStorage.getItem(LEADERBOARD_KEY);
-            let data: LeaderboardEntry[] = [];
-            
-            // ✅ Parse và validate dữ liệu hiện có
-            if (dataString) {
-                try {
-                    const parsed = JSON.parse(dataString);
-                    if (Array.isArray(parsed)) {
-                        // Filter để chỉ giữ entries hợp lệ
-                        data = parsed.filter(entry => {
-                            return entry &&
-                                typeof entry.playerName === 'string' &&
-                                typeof entry.score === 'number' &&
-                                typeof entry.lines === 'number' &&
-                                typeof entry.level === 'number' &&
-                                typeof entry.timestamp === 'number';
-                        });
-                    }
-                } catch (parseError) {
-                    console.warn('⚠️ Không parse được dữ liệu cũ, bắt đầu mới');
-                }
+            // 🔥 Khởi tạo Firebase nếu chưa
+            if (!firebaseService.isInitialized()) {
+                console.log('🔥 Đang khởi tạo Firebase để lưu điểm...');
+                await firebaseService.initialize();
             }
 
-            // ➕ Thêm entry mới
-            const newEntry: LeaderboardEntry = {
-                playerName: playerName,
-                score: score,
-                lines: lines,
-                level: level,
-                timestamp: Date.now()  // Thời gian hiện tại (milliseconds)
-            };
+            // 💾 Lưu điểm lên Firebase
+            await firebaseService.saveScore(score, playerName);
 
-            data.push(newEntry);
-
-            // 📊 Sắp xếp lại theo điểm giảm dần
-            data.sort((a, b) => b.score - a.score);
-
-            // 🔟 Giữ tối đa MAX_ENTRIES (để không quá nặng)
-            data = data.slice(0, MAX_ENTRIES);
-
-            // 💾 Lưu lại vào localStorage
-            localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(data));
-
-            console.log('✅ Đã lưu điểm vào leaderboard:', newEntry);
+            console.log('✅ Đã lưu điểm vào Firebase leaderboard:', { score, playerName });
 
         } catch (error) {
-            console.error('❌ Lỗi khi lưu điểm:', error);
+            console.error('❌ Lỗi khi lưu điểm vào Firebase:', error);
+            
+            // ⚠️ Fallback: Vẫn có thể thêm localStorage backup nếu muốn
+            console.log('💡 Gợi ý: Kiểm tra kết nối internet và thử lại');
         }
     }
 

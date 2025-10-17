@@ -33,6 +33,7 @@
     "build-nolog": "next build"
   },
   "dependencies": {
+    "firebase": "^12.4.0",
     "next": "15.5.5",
     "phaser": "^3.90.0",
     "react": "19.0.0",
