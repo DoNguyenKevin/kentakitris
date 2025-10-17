@@ -56,7 +56,7 @@ interface EnergyBlock {
 ### Game Over Conditions
 
 Energy blocks gây game over khi:
-1. ❌ Chạm đáy board (y >= BOARD_HEIGHT - 1)
+1. ❌ Chạm đáy board (y >= BOARD_HEIGHT)
 2. ❌ Va chạm với mảnh đã khóa trên board
 
 ## 🎨 Hiệu ứng đồ họa
