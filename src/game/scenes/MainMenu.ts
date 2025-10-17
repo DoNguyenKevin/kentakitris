@@ -39,6 +39,7 @@ export class MainMenu extends Scene
     // 🎮 Difficulty selection
     selectedDifficulty: DIFFICULTY_LEVELS;   // Độ khó đã chọn
     difficultyButtons: Phaser.GameObjects.Text[]; // Các nút chọn độ khó
+    difficultyButtonMap: Map<Phaser.GameObjects.Text, DIFFICULTY_LEVELS>; // Map button → difficulty
 
     constructor ()
     {
@@ -192,6 +193,7 @@ export class MainMenu extends Scene
         // 📋 Lấy danh sách tất cả độ khó
         const difficulties = Object.values(DIFFICULTY_LEVELS);
         this.difficultyButtons = [];
+        this.difficultyButtonMap = new Map(); // ✅ Type-safe map
 
         // 🔄 Tạo nút cho mỗi độ khó
         difficulties.forEach((difficulty, index) => {
@@ -210,8 +212,8 @@ export class MainMenu extends Scene
             // 🖱️ Cho phép click
             button.setInteractive({ useHandCursor: true });
 
-            // 📍 Lưu difficulty vào button (để biết button này là độ khó nào)
-            (button as any).difficulty = difficulty;
+            // 📍 Lưu difficulty vào map (type-safe!)
+            this.difficultyButtonMap.set(button, difficulty);
 
             // 🎯 Xử lý click
             button.on('pointerdown', () => {
@@ -280,7 +282,10 @@ export class MainMenu extends Scene
      */
     updateDifficultyButtons() {
         this.difficultyButtons.forEach(button => {
-            const buttonDifficulty = (button as any).difficulty;
+            // ✅ Lấy difficulty từ map (type-safe!)
+            const buttonDifficulty = this.difficultyButtonMap.get(button);
+            if (!buttonDifficulty) return;
+            
             const config = DIFFICULTY_CONFIG[buttonDifficulty];
 
             if (buttonDifficulty === this.selectedDifficulty) {

@@ -181,9 +181,9 @@ export class Game extends Scene {
      * 
      * Try it: Chạy game và xem create() được gọi khi nào!
      */
-    create(data: { difficulty?: DIFFICULTY_LEVELS }) {
+    create(data?: any) {
         // 🎯 Nhận difficulty từ MainMenu (hoặc dùng mặc định)
-        this.difficulty = data.difficulty || DEFAULT_DIFFICULTY;
+        this.difficulty = (data && data.difficulty) || DEFAULT_DIFFICULTY;
         console.log('Game started with difficulty:', this.difficulty);
         
         // 📹 Thiết lập camera

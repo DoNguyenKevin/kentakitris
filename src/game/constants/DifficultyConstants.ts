@@ -119,9 +119,19 @@ export const DIFFICULTY_STORAGE_KEY = 'kentakitris_difficulty'; // Key lưu tron
  * → { name: "Dễ (Easy)", dropSpeedMultiplier: 1.5, ... }
  * 
  * Try it: console.log(getDifficultyConfig(DIFFICULTY_LEVELS.HARD))
+ * 
+ * ❓ Câu hỏi: Tại sao cần kiểm tra valid?
+ * 💡 Trả lời: Để tránh lỗi nếu truyền sai độ khó!
+ *            Nếu sai → trả về Normal (mặc định)
  */
 export function getDifficultyConfig(difficulty: DIFFICULTY_LEVELS): DifficultyConfig {
-    return DIFFICULTY_CONFIG[difficulty];
+    // ✅ Kiểm tra xem difficulty có hợp lệ không
+    if (difficulty && DIFFICULTY_CONFIG[difficulty]) {
+        return DIFFICULTY_CONFIG[difficulty];
+    }
+    // ❌ Nếu không hợp lệ, trả về mặc định (Normal)
+    console.warn(`Invalid difficulty: ${difficulty}, using default (NORMAL)`);
+    return DIFFICULTY_CONFIG[DEFAULT_DIFFICULTY];
 }
 
 /**
