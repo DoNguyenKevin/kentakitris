@@ -29,6 +29,21 @@ export enum DIFFICULTY_LEVELS {
 }
 
 /**
+ * ✅ Cấu hình cho Energy Blocks (Khối năng lượng)
+ * 
+ * Energy Blocks = Khối nguy hiểm xuất hiện ở Hard/Impossible
+ * Nếu chạm = Game Over!
+ */
+export interface EnergyBlockConfig {
+    spawnChance: number;        // Tỷ lệ xuất hiện (0.0 - 1.0)
+    dropSpeed: number;          // Tốc độ rơi (ms/ô)
+    color: number;              // Màu sắc (hex)
+    canExplode: boolean;        // Có thể nổ khi chuột đến gần?
+    explosionDistance?: number; // Khoảng cách nổ (pixels)
+    freezeDuration?: number;    // Thời gian đóng băng chuột (ms)
+}
+
+/**
  * ✅ Cấu hình cho từng độ khó
  * 
  * Interface = Khuôn mẫu (định nghĩa cấu trúc dữ liệu)
@@ -40,6 +55,8 @@ export interface DifficultyConfig {
     scoreMultiplier: number;        // Hệ số nhân điểm số
     color: string;                  // Màu hiển thị
     description: string;            // Mô tả độ khó
+    hasEnergyBlocks: boolean;       // Có energy blocks không?
+    energyBlockConfig?: EnergyBlockConfig; // Cấu hình energy blocks
 }
 
 /**
@@ -70,7 +87,8 @@ export const DIFFICULTY_CONFIG: Record<DIFFICULTY_LEVELS, DifficultyConfig> = {
         dropSpeedMultiplier: 1.5,        // Chậm hơn 50%
         scoreMultiplier: 0.8,            // Điểm ít hơn 20%
         color: '#00FF88',                // Màu xanh lá nhạt
-        description: 'Cho người mới bắt đầu - Mảnh rơi chậm'
+        description: 'Cho người mới bắt đầu - Mảnh rơi chậm',
+        hasEnergyBlocks: false           // Không có energy blocks
     },
     [DIFFICULTY_LEVELS.NORMAL]: {
         name: 'Bình thường (Normal)',
@@ -78,7 +96,8 @@ export const DIFFICULTY_CONFIG: Record<DIFFICULTY_LEVELS, DifficultyConfig> = {
         dropSpeedMultiplier: 1.0,        // Tốc độ chuẩn
         scoreMultiplier: 1.0,            // Điểm chuẩn
         color: '#FFD700',                // Màu vàng
-        description: 'Độ khó chuẩn của Tetris'
+        description: 'Độ khó chuẩn của Tetris',
+        hasEnergyBlocks: false           // Không có energy blocks
     },
     [DIFFICULTY_LEVELS.HARD]: {
         name: 'Khó (Hard)',
@@ -86,7 +105,14 @@ export const DIFFICULTY_CONFIG: Record<DIFFICULTY_LEVELS, DifficultyConfig> = {
         dropSpeedMultiplier: 0.8,        // Nhanh hơn 25%
         scoreMultiplier: 1.3,            // Điểm nhiều hơn 30%
         color: '#FF8E0D',                // Màu cam
-        description: 'Thử thách - Mảnh rơi nhanh hơn'
+        description: 'Thử thách - Mảnh rơi nhanh hơn + Energy Blocks',
+        hasEnergyBlocks: true,           // ✅ Có energy blocks!
+        energyBlockConfig: {
+            spawnChance: 0.1,            // 10% cơ hội xuất hiện mỗi mảnh mới
+            dropSpeed: 3000,             // Rơi chậm: 3 giây/ô
+            color: 0x00FFFF,             // Màu cyan sáng
+            canExplode: false            // Không nổ (chỉ chạm = game over)
+        }
     },
     [DIFFICULTY_LEVELS.IMPOSSIBLE]: {
         name: 'Impossible',
@@ -94,7 +120,16 @@ export const DIFFICULTY_CONFIG: Record<DIFFICULTY_LEVELS, DifficultyConfig> = {
         dropSpeedMultiplier: 0.6,        // Nhanh hơn 67%
         scoreMultiplier: 1.5,            // Điểm nhiều hơn 50%
         color: '#FF0D72',                // Màu hồng sáng
-        description: 'Cực khó - Chỉ dành cho cao thủ!'
+        description: 'Cực khó - Chỉ dành cho cao thủ! + Energy Bombs',
+        hasEnergyBlocks: true,           // ✅ Có energy blocks!
+        energyBlockConfig: {
+            spawnChance: 0.2,            // 20% cơ hội xuất hiện
+            dropSpeed: 800,              // Rơi cực nhanh: 0.8 giây/ô
+            color: 0xFF00FF,             // Màu magenta/hồng tím
+            canExplode: true,            // ✅ Có thể nổ!
+            explosionDistance: 100,      // Chuột đến gần 100px → NỔ!
+            freezeDuration: 3000         // Đóng băng chuột 3 giây
+        }
     }
 };
 
