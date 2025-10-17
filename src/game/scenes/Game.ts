@@ -13,6 +13,7 @@
 
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
+import { Leaderboard } from './Leaderboard';
 
 // 🎮 Hằng số game (Game Constants)
 // ======================================================
@@ -726,6 +727,10 @@ export class Game extends Scene {
     endGame() {
         this.gameOver = true;
         this.dropTimer.remove();
+        
+        // 💾 Lưu điểm vào leaderboard
+        // Gọi hàm static saveScore() của Leaderboard scene
+        Leaderboard.saveScore(this.score, this.lines, this.level);
         
         this.add.text(512, 384, 'GAME OVER', {
             fontFamily: 'Arial Black',
