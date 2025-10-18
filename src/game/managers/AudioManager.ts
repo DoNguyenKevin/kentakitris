@@ -223,8 +223,9 @@ export class AudioManager {
         
         // Cập nhật volume của music nếu đang chạy
         if (this.bgMusic && this.bgMusic.isPlaying) {
-            // Phaser's BaseSound uses setVolume method but TypeScript doesn't know
-            (this.bgMusic as any).setVolume(this.settings.musicVolume);
+            // Phaser's BaseSound has setVolume but TypeScript definition is incomplete
+            // Cast to WebAudioSound which has the method
+            (this.bgMusic as Phaser.Sound.WebAudioSound).setVolume(this.settings.musicVolume);
         }
         
         // Nếu tắt music → dừng music
