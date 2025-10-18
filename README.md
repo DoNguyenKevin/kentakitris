@@ -103,6 +103,7 @@ Kentakitris is now powered by **Phaser 3**, a professional HTML5 game framework!
   - 📏 **Wide Mode** - Mở rộng bảng từ 10 → 12 cột
 - ✅ **Visual Effects** - CSS animations cho từng skill
 - ✅ **Modular Design** - Code được tách module dễ bảo trì
+- ✅ **🧪 Dev Test Panel** - Panel test power-ups cho developer (nhấn D)
 
 ---
 
@@ -212,6 +213,7 @@ keltris/
 - **Arrow Up / X**: Rotate
 - **Spacebar**: Hard drop (instant)
 - **P**: Pause/Resume
+- **D**: Toggle Dev Test Panel (for testing power-ups) 🧪
 
 ### Mobile Controls
 - **Touch buttons**: On-screen controls
@@ -306,7 +308,8 @@ Mỗi khi lên level (xóa 10 hàng), bạn sẽ được chọn 1 trong 3 skill
 ### 📖 Hướng Dẫn Chi Tiết
 
 **Cho người chơi**: [`SKILLS-GUIDE.md`](docs/SKILLS-GUIDE.md) - Hướng dẫn đầy đủ từng skill  
-**Cho developers**: [`SKILLS-TECHNICAL.md`](docs/SKILLS-TECHNICAL.md) - Tài liệu kỹ thuật
+**Cho developers**: [`SKILLS-TECHNICAL.md`](docs/SKILLS-TECHNICAL.md) - Tài liệu kỹ thuật  
+**🧪 Dev Test Panel**: [`DEV-TEST-PANEL.md`](docs/DEV-TEST-PANEL.md) - Công cụ test power-ups
 
 ### 🎮 Ví Dụ Skill Mạnh
 
