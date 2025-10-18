@@ -34,6 +34,7 @@ import { EnergyBlockManager } from '../managers/EnergyBlockManager';
 import { GameRenderer } from '../helpers/GameRenderer';
 import { PowerUpManager } from '../managers/PowerUpManager';
 import { PowerUpType } from '../constants/PowerUpConstants';
+import { DevTestPanel } from '../helpers/DevTestPanel';
 
 /**
  * ✅ Game Scene - Scene chính chứa gameplay Tetris
@@ -75,6 +76,7 @@ export class Game extends Scene {
     energyBlockManager: EnergyBlockManager;  // Quản lý energy blocks
     gameRenderer: GameRenderer;              // Quản lý rendering
     powerUpManager: PowerUpManager;          // Quản lý power-ups
+    devTestPanel: DevTestPanel;              // 🧪 Dev test panel (nhấn D để mở)
     
     /**
      * ✅ Constructor - Khởi tạo scene
@@ -154,6 +156,9 @@ export class Game extends Scene {
             BOARD_Y,
             this.board
         );
+        
+        // 🧪 Khởi tạo Dev Test Panel (nhấn D để mở)
+        this.devTestPanel = new DevTestPanel(this, this.powerUpManager);
 
         // 📝 Tạo UI (chữ và bảng điểm)
         this.createUI();
@@ -170,6 +175,9 @@ export class Game extends Scene {
         this.input.keyboard!.on('keydown-THREE', () => this.powerUpManager.activatePowerUp(PowerUpType.REVERSE_GRAVITY));
         this.input.keyboard!.on('keydown-FOUR', () => this.powerUpManager.activatePowerUp(PowerUpType.TELEPORT));
         this.input.keyboard!.on('keydown-FIVE', () => this.powerUpManager.activatePowerUp(PowerUpType.WIDE_MODE));
+        
+        // 🧪 Phím D để mở Dev Test Panel
+        this.input.keyboard!.on('keydown-D', () => this.devTestPanel.toggle());
         
         // 🌀 Thiết lập click handler cho Teleport mode
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
