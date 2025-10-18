@@ -61,18 +61,23 @@ export class GameRenderer {
      * 4. Vẽ mảnh tiếp theo
      * 
      * Try it: Hàm này được gọi 60 lần/giây trong update()
+     * 
+     * @param board - Bảng game
+     * @param currentPiece - Mảnh hiện tại
+     * @param nextPiece - Mảnh tiếp theo
+     * @param boardWidth - Chiều rộng board (optional, mặc định BOARD_WIDTH)
      */
-    render(board: number[][], currentPiece: Piece | null, nextPiece: Piece | null) {
+    render(board: number[][], currentPiece: Piece | null, nextPiece: Piece | null, boardWidth: number = BOARD_WIDTH) {
         // Clear graphics cũ
         this.clear();
         
         // Vẽ theo thứ tự: Board → Current piece → Next piece
-        this.renderBoard(board);
+        this.renderBoard(board, boardWidth);
         if (currentPiece) {
             this.renderCurrentPiece(currentPiece);
         }
         if (nextPiece) {
-            this.renderNextPiece(nextPiece);
+            this.renderNextPiece(nextPiece, boardWidth);
         }
     }
     
@@ -99,21 +104,24 @@ export class GameRenderer {
      * 
      * ❓ Câu hỏi: Tại sao vẽ viền trước?
      * 💡 Trả lời: Để viền ở dưới cùng, không che lưới và mảnh!
+     * 
+     * @param board - Bảng game
+     * @param boardWidth - Chiều rộng board (hỗ trợ Wide Mode)
      */
-    renderBoard(board: number[][]) {
-        // 🔲 Vẽ viền board (border)
+    renderBoard(board: number[][], boardWidth: number = BOARD_WIDTH) {
+        // 🔲 Vẽ viền board (border) với chiều rộng động
         this.boardGraphics.lineStyle(4, 0x888888);
         this.boardGraphics.strokeRect(
             this.boardX - 2,
             this.boardY - 2,
-            BOARD_WIDTH * BLOCK_SIZE + 4,
+            boardWidth * BLOCK_SIZE + 4,
             BOARD_HEIGHT * BLOCK_SIZE + 4
         );
         
-        // 📏 Vẽ lưới (grid)
+        // 📏 Vẽ lưới (grid) với chiều rộng động
         this.boardGraphics.lineStyle(1, 0x333333);
         for (let y = 0; y < BOARD_HEIGHT; y++) {
-            for (let x = 0; x < BOARD_WIDTH; x++) {
+            for (let x = 0; x < boardWidth; x++) {
                 const px = this.boardX + x * BLOCK_SIZE;
                 const py = this.boardY + y * BLOCK_SIZE;
                 this.boardGraphics.strokeRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
@@ -172,9 +180,12 @@ export class GameRenderer {
      * ❓ Câu hỏi: Tại sao mảnh nhỏ hơn?
      * 💡 Trả lời: Để phân biệt với mảnh đang chơi!
      *            Preview chỉ để xem trước thôi.
+     * 
+     * @param piece - Mảnh tiếp theo
+     * @param boardWidth - Chiều rộng board (để tính vị trí preview)
      */
-    renderNextPiece(piece: Piece) {
-        const nextX = this.boardX + BOARD_WIDTH * BLOCK_SIZE + 50;
+    renderNextPiece(piece: Piece, boardWidth: number = BOARD_WIDTH) {
+        const nextX = this.boardX + boardWidth * BLOCK_SIZE + 50;
         const nextY = 400;
         const nextSize = 20; // Nhỏ hơn BLOCK_SIZE
         
