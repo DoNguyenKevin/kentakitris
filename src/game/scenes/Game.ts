@@ -35,6 +35,10 @@ import { GameRenderer } from '../helpers/GameRenderer';
 import { PowerUpManager } from '../managers/PowerUpManager';
 import { PowerUpType } from '../constants/PowerUpConstants';
 import { DevTestPanel } from '../helpers/DevTestPanel';
+import { TouchControlsManager } from '../managers/TouchControlsManager';
+import { AudioManager } from '../managers/AudioManager';
+import { ParticleManager } from '../managers/ParticleManager';
+import { Settings } from './Settings';
 
 /**
  * ✅ Game Scene - Scene chính chứa gameplay Tetris
@@ -77,6 +81,16 @@ export class Game extends Scene {
     gameRenderer: GameRenderer;              // Quản lý rendering
     powerUpManager: PowerUpManager;          // Quản lý power-ups
     devTestPanel: DevTestPanel;              // 🧪 Dev test panel (nhấn D để mở)
+    touchControlsManager: TouchControlsManager; // 📱 Touch controls cho mobile
+    audioManager: AudioManager;              // 🔊 Quản lý âm thanh
+    particleManager: ParticleManager;        // ✨ Quản lý particle effects
+    
+    // ⏸️ Pause state
+    isPaused: boolean = false;
+    
+    // 📊 Speed indicator
+    speedText: Phaser.GameObjects.Text;
+    showSpeed: boolean = false;
     
     /**
      * ✅ Constructor - Khởi tạo scene
@@ -159,9 +173,27 @@ export class Game extends Scene {
         
         // 🧪 Khởi tạo Dev Test Panel (nhấn D để mở)
         this.devTestPanel = new DevTestPanel(this, this.powerUpManager);
+        
+        // 🔊 Khởi tạo Audio Manager
+        this.audioManager = new AudioManager(this);
+        
+        // ✨ Khởi tạo Particle Manager
+        this.particleManager = new ParticleManager(this);
+        
+        // 📱 Khởi tạo Touch Controls Manager
+        this.touchControlsManager = new TouchControlsManager(this, {
+            onMoveLeft: () => this.movePiece(-1, 0),
+            onMoveRight: () => this.movePiece(1, 0),
+            onMoveDown: () => this.movePiece(0, 1),
+            onRotate: () => this.rotatePiece(),
+            onHardDrop: () => this.hardDrop(),
+        });
 
         // 📝 Tạo UI (chữ và bảng điểm)
         this.createUI();
+        
+        // 📥 Load settings và apply
+        this.loadGameSettings();
 
         // ⌨️ Thiết lập điều khiển keyboard
         this.cursors = this.input.keyboard!.createCursorKeys();
@@ -178,6 +210,10 @@ export class Game extends Scene {
         
         // 🧪 Phím D để mở Dev Test Panel
         this.input.keyboard!.on('keydown-D', () => this.devTestPanel.toggle());
+        
+        // ⏸️ Phím P và ESC để pause
+        this.input.keyboard!.on('keydown-P', () => this.pauseGame());
+        this.input.keyboard!.on('keydown-ESC', () => this.pauseGame());
         
         // 🌀 Thiết lập click handler cho Teleport mode
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -208,9 +244,16 @@ export class Game extends Scene {
         // 🎮 Bắt đầu game
         this.spawnPiece();      // Tạo mảnh đầu tiên
         this.startGameLoop();   // Bắt đầu vòng lặp tự động rơi
+        
+        // 🎵 Phát background music
+        this.audioManager.playMusic();
 
         // 📡 Thông báo cho React: Scene sẵn sàng!
         EventBus.emit('current-scene-ready', this);
+        
+        // 📡 Listen for settings changes
+        EventBus.on('settings-changed', this.onSettingsChanged, this);
+        EventBus.on('game-resumed', this.onGameResumed, this);
     }
 
     /**
@@ -275,6 +318,14 @@ export class Game extends Scene {
             fontSize: '28px',
             color: '#FFFFFF',
         });
+        
+        // 📊 Speed indicator (bên cạnh level, ban đầu ẩn)
+        this.speedText = this.add.text(scoreX + 60, scoreY + 188, `(${Math.floor(this.dropDelay)}ms)`, {
+            fontFamily: 'Arial',
+            fontSize: '14px',
+            color: '#888888',
+        });
+        this.speedText.setVisible(this.showSpeed);
 
         // Chữ "LINES"
         this.add.text(scoreX, scoreY + 230, 'LINES', {
@@ -517,6 +568,9 @@ export class Game extends Scene {
             return false; // Thất bại
         }
         
+        // 🔊 Play move sound
+        this.audioManager.playSound('move');
+        
         return true; // ✅ Thành công!
     }
 
@@ -551,6 +605,9 @@ export class Game extends Scene {
         if (this.checkCollision(this.currentPiece)) {
             // ❌ Xoay bị chặn → Khôi phục shape cũ
             this.currentPiece.shape = oldShape;
+        } else {
+            // 🔊 Play rotate sound
+            this.audioManager.playSound('rotate');
         }
     }
 
@@ -674,6 +731,9 @@ export class Game extends Scene {
             }
         }
         
+        // 🔊 Play lock sound
+        this.audioManager.playSound('lock');
+        
         // 💣 Kích hoạt Bomb effect (nếu có)
         if (this.powerUpManager.hasBombPending()) {
             this.powerUpManager.activateBombEffect(this.currentPiece);
@@ -725,6 +785,23 @@ export class Game extends Scene {
             const points = calculateScore(basePoints, this.difficulty);
             this.score += points;
             
+            // 🔊 Play clear sound
+            this.audioManager.playSound('clear');
+            
+            // ✨ Tạo particle effect (điểm bay lên)
+            const scoreX = BOARD_X + BOARD_WIDTH * BLOCK_SIZE + 50;
+            const scoreY = BOARD_Y + 120;
+            this.particleManager.createScoreParticle(
+                BOARD_X + (BOARD_WIDTH * BLOCK_SIZE) / 2,
+                BOARD_Y + BOARD_HEIGHT * BLOCK_SIZE / 2,
+                points,
+                scoreX,
+                scoreY
+            );
+            
+            // ✨ Combo effect
+            this.particleManager.createComboEffect(linesCleared);
+            
             // Level up
             const newLevel = Math.floor(this.lines / 10) + 1;
             if (newLevel > this.level) {
@@ -736,6 +813,15 @@ export class Game extends Scene {
                 // Restart the timer with new delay
                 this.dropTimer.remove();
                 this.startGameLoop();
+                
+                // 🔊 Play level up sound
+                this.audioManager.playSound('levelup');
+                
+                // ✨ Level up effect
+                this.particleManager.createLevelUpEffect(this.level);
+                
+                // 📊 Update speed display
+                this.updateSpeedDisplay();
             }
             
             this.updateUI();
@@ -766,6 +852,15 @@ export class Game extends Scene {
         this.gameOver = true;
         this.dropTimer.remove();
         
+        // 🔊 Play game over sound
+        this.audioManager.playSound('gameover');
+        
+        // 🎵 Stop music
+        this.audioManager.stopMusic();
+        
+        // ✨ Game over effect
+        this.particleManager.createGameOverEffect();
+        
         // 💾 Lưu điểm vào Firebase leaderboard
         // Gọi hàm static saveScore() của Leaderboard scene
         // Firebase tự động lưu điểm lên cloud và chia sẻ với mọi người!
@@ -789,6 +884,73 @@ export class Game extends Scene {
     }
 
 
+
+    /**
+     * ✅ loadGameSettings() - Load settings và apply
+     */
+    private loadGameSettings() {
+        const settings = Settings.getSettings();
+        this.showSpeed = settings.showSpeed;
+        
+        // Update UI nếu cần
+        if (this.showSpeed && this.speedText) {
+            this.speedText.setVisible(true);
+            this.updateSpeedDisplay();
+        }
+    }
+    
+    /**
+     * ✅ onSettingsChanged() - Callback khi settings thay đổi
+     */
+    private onSettingsChanged(settings: any) {
+        this.showSpeed = settings.showSpeed;
+        
+        // Update speed display visibility
+        if (this.speedText) {
+            this.speedText.setVisible(this.showSpeed);
+            if (this.showSpeed) {
+                this.updateSpeedDisplay();
+            }
+        }
+        
+        // Update audio settings
+        this.audioManager.updateSettings();
+    }
+    
+    /**
+     * ✅ updateSpeedDisplay() - Cập nhật hiển thị tốc độ
+     */
+    private updateSpeedDisplay() {
+        if (this.speedText && this.showSpeed) {
+            this.speedText.setText(`(${Math.floor(this.dropDelay)}ms)`);
+        }
+    }
+    
+    /**
+     * ✅ pauseGame() - Tạm dừng game
+     */
+    private pauseGame() {
+        if (this.gameOver || this.isPaused) return;
+        
+        this.isPaused = true;
+        this.scene.pause('Game');
+        this.scene.launch('Pause');
+        
+        // Pause audio
+        this.audioManager.pauseMusic();
+        
+        EventBus.emit('game-paused');
+    }
+    
+    /**
+     * ✅ onGameResumed() - Callback khi resume từ pause
+     */
+    private onGameResumed() {
+        this.isPaused = false;
+        
+        // Resume audio
+        this.audioManager.resumeMusic();
+    }
 
     changeScene() {
         this.scene.start('GameOver');
