@@ -32,6 +32,8 @@ import {
 } from '../constants/GameConstants';
 import { EnergyBlockManager } from '../managers/EnergyBlockManager';
 import { GameRenderer } from '../helpers/GameRenderer';
+import { PowerUpManager } from '../managers/PowerUpManager';
+import { PowerUpType } from '../constants/PowerUpConstants';
 
 /**
  * ✅ Game Scene - Scene chính chứa gameplay Tetris
@@ -72,6 +74,7 @@ export class Game extends Scene {
     // 🎨 Managers & Helpers - Quản lý logic phức tạp
     energyBlockManager: EnergyBlockManager;  // Quản lý energy blocks
     gameRenderer: GameRenderer;              // Quản lý rendering
+    powerUpManager: PowerUpManager;          // Quản lý power-ups
     
     /**
      * ✅ Constructor - Khởi tạo scene
@@ -143,6 +146,14 @@ export class Game extends Scene {
             () => this.gameOver     // Callback để kiểm tra game over
         );
         this.energyBlockManager.init();
+        
+        // 🎯 Khởi tạo Power-Up Manager
+        this.powerUpManager = new PowerUpManager(
+            this,
+            BOARD_X,
+            BOARD_Y,
+            this.board
+        );
 
         // 📝 Tạo UI (chữ và bảng điểm)
         this.createUI();
@@ -152,6 +163,39 @@ export class Game extends Scene {
         this.input.keyboard!.on('keydown-SPACE', () => this.hardDrop());  // Phím Space = thả nhanh
         this.input.keyboard!.on('keydown-UP', () => this.rotatePiece()); // Phím ↑ = xoay
         this.input.keyboard!.on('keydown-X', () => this.rotatePiece());  // Phím X = xoay
+        
+        // 🎯 Phím tắt cho Power-ups (để test)
+        this.input.keyboard!.on('keydown-ONE', () => this.powerUpManager.activatePowerUp(PowerUpType.BOMB));
+        this.input.keyboard!.on('keydown-TWO', () => this.powerUpManager.activatePowerUp(PowerUpType.MAGIC_BLOCK));
+        this.input.keyboard!.on('keydown-THREE', () => this.powerUpManager.activatePowerUp(PowerUpType.REVERSE_GRAVITY));
+        this.input.keyboard!.on('keydown-FOUR', () => this.powerUpManager.activatePowerUp(PowerUpType.TELEPORT));
+        this.input.keyboard!.on('keydown-FIVE', () => this.powerUpManager.activatePowerUp(PowerUpType.WIDE_MODE));
+        
+        // 🌀 Thiết lập click handler cho Teleport mode
+        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            if (this.powerUpManager.isTeleport() && this.currentPiece) {
+                // Tính toán vị trí click trên board
+                const clickX = pointer.x - BOARD_X;
+                const clickY = pointer.y - BOARD_Y;
+                
+                // Chuyển đổi từ pixel sang tọa độ ô
+                const cellX = Math.floor(clickX / BLOCK_SIZE);
+                const cellY = Math.floor(clickY / BLOCK_SIZE);
+                
+                // Thử teleport
+                const teleportedPiece = this.powerUpManager.tryTeleport(
+                    this.currentPiece,
+                    cellX,
+                    cellY,
+                    (piece) => this.checkCollision(piece)
+                );
+                
+                if (teleportedPiece) {
+                    this.currentPiece = teleportedPiece;
+                    console.log('🌀 Teleported to:', cellX, cellY);
+                }
+            }
+        });
 
         // 🎮 Bắt đầu game
         this.spawnPiece();      // Tạo mảnh đầu tiên
@@ -251,6 +295,14 @@ export class Game extends Scene {
             fontSize: '16px',
             color: '#888888',
         });
+        
+        // 🎯 Hướng dẫn Power-ups (test mode)
+        const powerUpHelpY = helpY + 25;
+        this.add.text(BOARD_X, powerUpHelpY, '1:💣 2:✨ 3:🔺 4:🌀 5:📏', {
+            fontFamily: 'Arial',
+            fontSize: '14px',
+            color: '#666666',
+        });
     }
 
     /**
@@ -300,6 +352,9 @@ export class Game extends Scene {
 
         // ⚡ Cập nhật energy blocks
         this.energyBlockManager.update();
+        
+        // 🎯 Cập nhật power-ups
+        this.powerUpManager.update(this.game.loop.delta);
 
         // 🎨 Vẽ lại màn hình
         this.render();
@@ -326,9 +381,12 @@ export class Game extends Scene {
     gameTick() {
         if (this.gameOver) return; // Đã thua → không làm gì
         
-        // Thử di chuyển xuống
-        if (!this.movePiece(0, 1)) {
-            // Không di chuyển được → chạm đáy!
+        // 🎯 Lấy hướng di chuyển (bình thường hoặc reverse gravity)
+        const direction = this.powerUpManager.getGravityDirection();
+        
+        // Thử di chuyển theo hướng trọng lực
+        if (!this.movePiece(0, direction)) {
+            // Không di chuyển được → chạm đáy (hoặc trần nếu reverse)!
             this.lockPiece();    // Khóa mảnh vào board
             this.clearLines();   // Xóa hàng đầy
             this.spawnPiece();   // Tạo mảnh mới
@@ -362,6 +420,9 @@ export class Game extends Scene {
         
         // Chuyển nextPiece thành currentPiece
         this.currentPiece = this.nextPiece;
+        
+        // 🎯 Điều chỉnh vị trí spawn (cho reverse gravity hoặc wide mode)
+        this.currentPiece = this.powerUpManager.adjustSpawnPosition(this.currentPiece);
         
         // Tạo nextPiece mới
         this.nextPiece = this.getRandomPiece();
@@ -399,14 +460,16 @@ export class Game extends Scene {
         const shape = SHAPES[index];
         const color = index + 1; // Màu 1-7 (0 = trống)
         
-        // 📍 Tính vị trí spawn (giữa board, trên cùng)
-        const startX = Math.floor(BOARD_WIDTH / 2) - Math.floor(shape[0].length / 2);
+        // 📍 Tính vị trí spawn (giữa board, trên cùng hoặc dưới cùng tùy reverse gravity)
+        // 🎯 Sử dụng currentBoardWidth từ PowerUpManager để hỗ trợ Wide Mode
+        const boardWidth = this.powerUpManager.getCurrentBoardWidth();
+        const startX = Math.floor(boardWidth / 2) - Math.floor(shape[0].length / 2);
         
         return {
             shape: shape.map(row => [...row]), // Copy shape (tránh sửa SHAPES gốc)
             color: color,
-            x: startX, // Giữa board
-            y: 0       // Trên cùng
+            x: startX, // Giữa board (tính theo chiều rộng hiện tại)
+            y: 0       // Trên cùng (sẽ được điều chỉnh bởi adjustSpawnPosition nếu reverse)
         };
     }
 
@@ -548,6 +611,10 @@ export class Game extends Scene {
      *            Chỉ phần dưới mới nhìn thấy.
      */
     checkCollision(piece: Piece): boolean {
+        // 🎯 Lấy chiều rộng board hiện tại (hỗ trợ Wide Mode)
+        const boardWidth = this.powerUpManager.getCurrentBoardWidth();
+        const isReverse = this.powerUpManager.isReverseGravity();
+        
         // Duyệt từng ô của mảnh
         for (let r = 0; r < piece.shape.length; r++) {
             for (let c = 0; c < piece.shape[r].length; c++) {
@@ -555,13 +622,26 @@ export class Game extends Scene {
                     const newY = piece.y + r;
                     const newX = piece.x + c;
                     
-                    // ❌ Kiểm tra vượt trái/phải/dưới
-                    if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) {
+                    // ❌ Kiểm tra vượt trái/phải
+                    if (newX < 0 || newX >= boardWidth) {
                         return true; // Va chạm!
                     }
                     
+                    // ❌ Kiểm tra vượt biên trên/dưới (tùy reverse gravity)
+                    if (isReverse) {
+                        // Khi reverse: kiểm tra trần (y < 0)
+                        if (newY < 0 || newY >= BOARD_HEIGHT) {
+                            return true;
+                        }
+                    } else {
+                        // Bình thường: kiểm tra sàn (y >= BOARD_HEIGHT)
+                        if (newY >= BOARD_HEIGHT) {
+                            return true;
+                        }
+                    }
+                    
                     // ❌ Kiểm tra chạm mảnh đã khóa
-                    if (newY >= 0 && this.board[newY][newX] !== 0) {
+                    if (newY >= 0 && newY < BOARD_HEIGHT && this.board[newY][newX] !== 0) {
                         return true; // Va chạm!
                     }
                 }
@@ -573,6 +653,7 @@ export class Game extends Scene {
     lockPiece() {
         if (!this.currentPiece) return;
         
+        // 📍 Khóa mảnh vào board
         for (let r = 0; r < this.currentPiece.shape.length; r++) {
             for (let c = 0; c < this.currentPiece.shape[r].length; c++) {
                 if (this.currentPiece.shape[r][c] !== 0) {
@@ -584,15 +665,43 @@ export class Game extends Scene {
                 }
             }
         }
+        
+        // 💣 Kích hoạt Bomb effect (nếu có)
+        if (this.powerUpManager.hasBombPending()) {
+            this.powerUpManager.activateBombEffect(this.currentPiece);
+        }
+        
+        // ✨ Kích hoạt Magic Block effect (nếu có)
+        if (this.powerUpManager.hasMagicBlockPending()) {
+            this.powerUpManager.activateMagicBlockEffect(this.currentPiece);
+        }
     }
 
     clearLines() {
         let linesCleared = 0;
         
+        // 🎯 Lấy chiều rộng board hiện tại (hỗ trợ Wide Mode)
+        const boardWidth = this.powerUpManager.getCurrentBoardWidth();
+        
         for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
-            if (this.board[y].every(cell => cell !== 0)) {
+            // Kiểm tra hàng đầy với chiều rộng động
+            // Chỉ kiểm tra phần board đang sử dụng (boardWidth cột đầu tiên)
+            let isFullLine = true;
+            for (let x = 0; x < boardWidth; x++) {
+                if (this.board[y][x] === 0) {
+                    isFullLine = false;
+                    break;
+                }
+            }
+            
+            if (isFullLine) {
+                // Xóa hàng đầy
                 this.board.splice(y, 1);
-                this.board.unshift(Array(BOARD_WIDTH).fill(0));
+                
+                // Tạo hàng mới trống với chiều rộng hiện tại
+                const newRow = Array(this.board[0].length).fill(0);
+                this.board.unshift(newRow);
+                
                 linesCleared++;
                 y++; // Check same row again
             }
@@ -632,11 +741,17 @@ export class Game extends Scene {
     }
 
     render() {
+        // 🎯 Lấy chiều rộng board hiện tại (hỗ trợ Wide Mode)
+        const boardWidth = this.powerUpManager.getCurrentBoardWidth();
+        
         // 🎨 Vẽ board, current piece và next piece
-        this.gameRenderer.render(this.board, this.currentPiece, this.nextPiece);
+        this.gameRenderer.render(this.board, this.currentPiece, this.nextPiece, boardWidth);
         
         // ⚡ Vẽ energy blocks
         this.energyBlockManager.render();
+        
+        // 🎯 Vẽ power-up effects
+        this.powerUpManager.render();
     }
 
     endGame() {
