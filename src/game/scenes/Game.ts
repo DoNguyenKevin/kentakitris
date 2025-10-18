@@ -685,16 +685,23 @@ export class Game extends Scene {
         
         for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
             // Kiểm tra hàng đầy với chiều rộng động
-            if (this.board[y].slice(0, boardWidth).every(cell => cell !== 0)) {
-                this.board.splice(y, 1);
-                // Tạo hàng mới với chiều rộng hiện tại
-                const newRow = Array(boardWidth).fill(0);
-                // Nếu wide mode, thêm padding để khớp với board array
-                if (boardWidth > BOARD_WIDTH) {
-                    const padding = boardWidth - BOARD_WIDTH;
-                    newRow.push(...Array(this.board[0].length - boardWidth).fill(0));
+            // Chỉ kiểm tra phần board đang sử dụng (boardWidth cột đầu tiên)
+            let isFullLine = true;
+            for (let x = 0; x < boardWidth; x++) {
+                if (this.board[y][x] === 0) {
+                    isFullLine = false;
+                    break;
                 }
+            }
+            
+            if (isFullLine) {
+                // Xóa hàng đầy
+                this.board.splice(y, 1);
+                
+                // Tạo hàng mới trống với chiều rộng hiện tại
+                const newRow = Array(this.board[0].length).fill(0);
                 this.board.unshift(newRow);
+                
                 linesCleared++;
                 y++; // Check same row again
             }

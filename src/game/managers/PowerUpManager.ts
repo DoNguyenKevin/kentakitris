@@ -488,7 +488,8 @@ export class PowerUpManager {
         if (this.isWideModeActive) return;
         
         this.isWideModeActive = true;
-        this.originalBoardWidth = this.currentBoardWidth;
+        // Lưu chiều rộng gốc THỰC SỰ (không phải currentBoardWidth)
+        this.originalBoardWidth = BOARD_WIDTH;
         const newWidth = 12;
         this.currentBoardWidth = newWidth;
         
