@@ -18,6 +18,8 @@ import { GameOver } from './scenes/GameOver';
 import { Game as MainGame } from './scenes/Game';
 import { MainMenu } from './scenes/MainMenu';
 import { Leaderboard } from './scenes/Leaderboard';
+import { Settings } from './scenes/Settings';
+import { Pause } from './scenes/Pause';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
 
@@ -39,7 +41,9 @@ const config: Phaser.Types.Core.GameConfig = {
         MainMenu,            // Scene 3: Menu chính
         MainGame,            // Scene 4: Game play
         GameOver,            // Scene 5: Game over
-        Leaderboard          // Scene 6: Bảng xếp hạng
+        Leaderboard,         // Scene 6: Bảng xếp hạng
+        Settings,            // Scene 7: Cài đặt
+        Pause                // Scene 8: Tạm dừng
     ]
 };
 

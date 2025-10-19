@@ -132,18 +132,50 @@ export class MainMenu extends Scene
         this.leaderboardText.on('pointerout', () => {
             this.leaderboardText.setScale(1.0);  // Về kích thước bình thường
         });
+        
+        // ⚙️ Nút "Settings"
+        const settingsText = this.add.text(512, 600, '⚙️ Settings', {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            color: '#AAAAAA',  // Màu xám
+            align: 'center'
+        }).setOrigin(0.5);
+
+        // 🖱️ Cho phép click vào nút Settings
+        settingsText.setInteractive({ useHandCursor: true });
+        settingsText.on('pointerdown', () => {
+            this.scene.pause('MainMenu');
+            this.scene.launch('Settings', { previousScene: 'MainMenu' });
+        });
+
+        // ✨ Hiệu ứng hover
+        settingsText.on('pointerover', () => {
+            settingsText.setScale(1.1);
+            settingsText.setColor('#FFFFFF');
+        });
+        settingsText.on('pointerout', () => {
+            settingsText.setScale(1.0);
+            settingsText.setColor('#AAAAAA');
+        });
 
         // 📖 Hướng dẫn phím
-        this.add.text(512, 630, 'Controls:', {
+        this.add.text(512, 650, 'Controls:', {
             fontFamily: 'Arial', 
             fontSize: '20px', 
             color: '#FFD700',
             align: 'center'
         }).setOrigin(0.5);
 
-        this.add.text(512, 670, '← → : Move  |  ↑ : Rotate  |  SPACE : Drop', {
+        this.add.text(512, 685, '← → : Move  |  ↑ : Rotate  |  SPACE : Drop', {
             fontFamily: 'Arial', 
-            fontSize: '18px', 
+            fontSize: '16px', 
+            color: '#AAAAAA',  // Màu xám
+            align: 'center'
+        }).setOrigin(0.5);
+        
+        this.add.text(512, 710, 'P / ESC : Pause', {
+            fontFamily: 'Arial', 
+            fontSize: '16px', 
             color: '#AAAAAA',  // Màu xám
             align: 'center'
         }).setOrigin(0.5);
