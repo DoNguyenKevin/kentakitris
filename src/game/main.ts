@@ -31,10 +31,17 @@ import { Preloader } from './scenes/Preloader';
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,              // AUTO = Tự chọn WebGL hoặc Canvas
-    width: 1024,             // Chiều rộng game (pixels)
-    height: 768,             // Chiều cao game (pixels)
+    width: 1024,             // Chiều rộng game mặc định (pixels)
+    height: 768,             // Chiều cao game mặc định (pixels)
     parent: 'game-container', // ID của HTML element chứa game
     backgroundColor: '#028af8', // Màu nền (xanh dương)
+    // 🎨 Scale mode - Làm game tự động co giãn theo kích thước màn hình
+    scale: {
+        mode: Phaser.Scale.FIT,     // FIT = Giữ tỷ lệ, fit vào viewport
+        autoCenter: Phaser.Scale.CENTER_BOTH, // Center cả 2 chiều
+        width: 1024,                // Chiều rộng thiết kế
+        height: 768                 // Chiều cao thiết kế
+    },
     scene: [                 // Danh sách các Scene (theo thứ tự)
         Boot,                // Scene 1: Khởi động
         Preloader,           // Scene 2: Load assets
