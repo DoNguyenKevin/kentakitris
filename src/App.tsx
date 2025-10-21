@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { IRefPhaserGame, PhaserGame } from './PhaserGame';
+import VersionSwitcher from './components/VersionSwitcher';
 
 function App()
 {
@@ -8,6 +9,7 @@ function App()
 
     return (
         <div id="app">
+            <VersionSwitcher currentVersion="new" />
             <PhaserGame ref={phaserRef} />
         </div>
     )
